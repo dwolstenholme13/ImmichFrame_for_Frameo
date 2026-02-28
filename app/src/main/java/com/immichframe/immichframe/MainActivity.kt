@@ -3,6 +3,8 @@ package com.immichframe.immichframe
 import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
 import android.annotation.SuppressLint
+import android.app.KeyguardManager
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -10,6 +12,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.RelativeSizeSpan
@@ -75,6 +78,7 @@ class MainActivity : AppCompatActivity() {
     private var previousImage: Helpers.ImageResponse? = null
     private var currentImage: Helpers.ImageResponse? = null
     private var portraitCache: Helpers.ImageResponse? = null
+    private var originalScreenTimeout: Int = -1
     private val imageRunnable = object : Runnable {
         override fun run() {
             if (isImageTimerRunning) {
@@ -770,11 +774,31 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // set screen timeout in Android settings in microseconds
+    private fun setScreenTimeout(timeout: Int) {
+        try {
+            Settings.System.putInt(
+                contentResolver,
+                Settings.System.SCREEN_OFF_TIMEOUT,
+                timeout
+            )
+        } catch (e: Exception) {
+            Log.e("Settings", "Could not set screen timeout: ${e.message}")
+        }
+    }
+
+    @Suppress("DEPRECATION")
     private fun screenDim(dim: Boolean) {
-        val lp = window.attributes
         if (dim) {
-            lp.screenBrightness = 0.01f
-            window.attributes = lp
+            // save user's screen timeout and set to 3s to show "going to sleep" message
+            originalScreenTimeout = Settings.System.getInt(
+                contentResolver, Settings.System.SCREEN_OFF_TIMEOUT, 30000
+            )
+            setScreenTimeout(3000)
+
+            // create black overlay, set webview to blank to reduce activity, and
+            // wait for screen to go to sleep after inactivity
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             if (dimOverlay.visibility != View.VISIBLE) {
                 dimOverlay.apply {
                     visibility = View.VISIBLE
@@ -791,9 +815,22 @@ class MainActivity : AppCompatActivity() {
                         .start()
                 }
             }
+
+            // display message to user that screen is going to sleep
+            Toast.makeText(
+                this@MainActivity,
+                "Going to sleep",
+                Toast.LENGTH_LONG
+            ).show()
+
         } else {
-            lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
-            window.attributes = lp
+            // restore user's screen timeout value
+            if (originalScreenTimeout != -1) {
+                setScreenTimeout(originalScreenTimeout)
+            }
+
+            // remove black overlay and restore webview settings
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             if (dimOverlay.isVisible) {
                 dimOverlay.animate()
                     .alpha(0f)
@@ -801,8 +838,29 @@ class MainActivity : AppCompatActivity() {
                     .withEndAction {
                         dimOverlay.visibility = View.GONE
                         loadSettings()
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                            setShowWhenLocked(false)
+                        }
                     }
                     .start()
+            }
+
+            // turn screen back on, dismissing keyguard lockscreen
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                setShowWhenLocked(true)
+                setTurnScreenOn(true)
+                val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+                keyguardManager.requestDismissKeyguard(this, null)
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+                keyguardManager.requestDismissKeyguard(this, null)
+                window.addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+                                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED)
+
+            } else {
+                window.addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+                                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                                WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD)
             }
         }
     }

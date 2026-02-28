@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
 
     <uses-feature
         android:name="android.hardware.touchscreen"
@@ -63,9 +65,15 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".WakeActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <activity android:name=".WidgetConfigActivity"
             android:label="Widget Configuration"
-            android:theme="@style/Theme.WidgetConfigDialog" />
+            android:theme="@style/Theme.WidgetConfigDialog"
+            android:exported="true" />
         <receiver android:name=".WidgetProvider"
             android:exported="true">
             <intent-filter>
