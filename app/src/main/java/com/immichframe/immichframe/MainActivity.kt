@@ -12,6 +12,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import android.provider.Settings
 import android.text.SpannableString
 import android.text.Spanned
@@ -828,6 +829,16 @@ class MainActivity : AppCompatActivity() {
             if (originalScreenTimeout != -1) {
                 setScreenTimeout(originalScreenTimeout)
             }
+
+            // acquire WakeLock to turn screen on for short time, just to wake device
+            // FLAG_KEEP_SCREEN_ON will keep it on afterwards
+            val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+            val wakeLock = powerManager.newWakeLock(
+                PowerManager.SCREEN_BRIGHT_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP,
+                "ImmichFrame:WakeLockTag"
+            )
+            wakeLock.acquire(10 * 1000L)  // 10 second timeout
+            wakeLock.release()
 
             // remove black overlay and restore webview settings
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)

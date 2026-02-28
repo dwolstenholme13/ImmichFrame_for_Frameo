@@ -65,11 +65,6 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".WakeActivity"
-            android:exported="false"
-            android:excludeFromRecents="true"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <activity android:name=".WidgetConfigActivity"
             android:label="Widget Configuration"
             android:theme="@style/Theme.WidgetConfigDialog"
