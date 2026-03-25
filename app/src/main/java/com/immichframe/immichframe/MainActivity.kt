@@ -493,6 +493,7 @@ class MainActivity : AppCompatActivity() {
         attemptFetch()
     }
 
+    // called when app starts and when user returns from settings screen
     @SuppressLint("SetJavaScriptEnabled")
     private fun loadSettings() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(applicationContext)
@@ -612,6 +613,7 @@ class MainActivity : AppCompatActivity() {
                 }
             )
         }
+        applyScreenTimeout()
     }
 
     private fun onSettingsLoaded() {
@@ -788,13 +790,36 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // apply user-entered screen timeout value
+    private fun applyScreenTimeout() {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(applicationContext)
+
+        if (keepScreenOn) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            val timeoutMinutes = prefs.getString("screenTimeout", "10")?.toIntOrNull() ?: 10
+            // capture original system timeout once if we haven't yet
+            if (originalScreenTimeout == -1) {
+                originalScreenTimeout = Settings.System.getInt(
+                    contentResolver, Settings.System.SCREEN_OFF_TIMEOUT, 30000
+                )
+            }
+            setScreenTimeout(timeoutMinutes * 60 * 1000)
+        }
+    }
+
     @Suppress("DEPRECATION")
     private fun screenDim(dim: Boolean) {
+        if (dim == dimOverlay.isVisible) return
+
         if (dim) {
             // save user's screen timeout and set to 3s to show "going to sleep" message
-            originalScreenTimeout = Settings.System.getInt(
-                contentResolver, Settings.System.SCREEN_OFF_TIMEOUT, 30000
-            )
+            if (originalScreenTimeout == -1) {
+                originalScreenTimeout = Settings.System.getInt(
+                    contentResolver, Settings.System.SCREEN_OFF_TIMEOUT, 30000
+                )
+            }
             setScreenTimeout(3000)
 
             // create black overlay, set webview to blank to reduce activity, and
@@ -828,6 +853,7 @@ class MainActivity : AppCompatActivity() {
             // restore user's screen timeout value
             if (originalScreenTimeout != -1) {
                 setScreenTimeout(originalScreenTimeout)
+                originalScreenTimeout = -1
             }
 
             // acquire WakeLock to turn screen on for short time, just to wake device
@@ -910,21 +936,22 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // called when user returns to app
     override fun onResume() {
         super.onResume()
-        if (keepScreenOn) {
-            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        } else {
-            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        }
+        applyScreenTimeout()
         hideSystemUI()
-
     }
 
+    // called when app is closed
     override fun onDestroy() {
         super.onDestroy()
         rcpServer.stop()
         handler.removeCallbacksAndMessages(null)
+        // restore timeout if we changed it
+        if (originalScreenTimeout != -1) {
+            setScreenTimeout(originalScreenTimeout)
+        }
     }
 
     private fun loadWebViewWithRetry(

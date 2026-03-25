@@ -12,6 +12,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.preference.EditTextPreference
 import androidx.preference.Preference
+import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
 import androidx.preference.SwitchPreferenceCompat
@@ -22,11 +23,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val chkUseWebView = findPreference<SwitchPreferenceCompat>("useWebView")
         val chkBlurredBackground = findPreference<SwitchPreferenceCompat>("blurredBackground")
         val chkShowCurrentDate = findPreference<SwitchPreferenceCompat>("showCurrentDate")
+        val chkKeepScreenOn = findPreference<SwitchPreferenceCompat>("keepScreenOn")
+        val txtScreenTimeout = findPreference<EditTextPreference>("screenTimeout")
+        val screenDimmingCategory = findPreference<PreferenceCategory>("screenDimmingCategory")
         val chkScreenDim = findPreference<SwitchPreferenceCompat>("screenDim")
         val txtDimTime = findPreference<EditTextPreference>("dim_time_range")
 
-
-        //obfuscate the authSecret
+        // obfuscate the authSecret
         val authPref = findPreference<EditTextPreference>("authSecret")
         authPref?.setOnBindEditTextListener { editText ->
             editText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
@@ -36,10 +39,17 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val useWebView = chkUseWebView?.isChecked ?: false
         chkBlurredBackground?.isVisible = !useWebView
         chkShowCurrentDate?.isVisible = !useWebView
+        
+        val keepScreenOn = chkKeepScreenOn?.isChecked ?: false
+        screenDimmingCategory?.isVisible = keepScreenOn
+        txtScreenTimeout?.isVisible = !keepScreenOn
+        
         val screenDim = chkScreenDim?.isChecked ?: false
         txtDimTime?.isVisible = screenDim
 
         // React to changes
+
+        // use Webview setting
         chkUseWebView?.setOnPreferenceChangeListener { _, newValue ->
             val value = newValue as Boolean
             chkBlurredBackground?.isVisible = !value
@@ -47,11 +57,34 @@ class SettingsFragment : PreferenceFragmentCompat() {
             //add android settings button
             true
         }
+
+        // keep screen on setting - toggles screen dimming category visibility
+        chkKeepScreenOn?.setOnPreferenceChangeListener { _, newValue ->
+            val value = newValue as Boolean
+            screenDimmingCategory?.isVisible = value
+            txtScreenTimeout?.isVisible = !value
+            true
+        }
+
+        // validate screen on timeout value
+        txtScreenTimeout?.setOnPreferenceChangeListener { _, newValue ->
+            val value = newValue.toString().toIntOrNull()
+            if (value != null && value > 0) {
+                true
+            } else {
+                Toast.makeText(requireContext(), "Please enter a valid number of minutes", Toast.LENGTH_SHORT).show()
+                false
+            }
+        }
+
+        // screen dimming setting - dimming time becomes visible if set
         chkScreenDim?.setOnPreferenceChangeListener { _, newValue ->
             val value = newValue as Boolean
             txtDimTime?.isVisible = value
             true
         }
+
+        // settings lock setting: prevent further access to settings screen
         val chkSettingsLock = findPreference<SwitchPreferenceCompat>("settingsLock")
         chkSettingsLock?.setOnPreferenceChangeListener { _, newValue ->
             val enabling = newValue as Boolean
@@ -72,7 +105,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             true
         }
 
-
+        // close settings view
         val btnClose = findPreference<Preference>("closeSettings")
         btnClose?.setOnPreferenceClickListener {
             val url = PreferenceManager.getDefaultSharedPreferences(requireContext())
@@ -88,6 +121,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             }
         }
 
+        // launch Android settings selection
         val btnAndroidSettings = findPreference<Preference>("androidSettings")
         btnAndroidSettings?.setOnPreferenceClickListener {
             val context = requireContext()
@@ -111,7 +145,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             true
         }
 
-
+        // get dimming time range setting from input string
         val timePref = findPreference<EditTextPreference>("dim_time_range")
         timePref?.setOnPreferenceChangeListener { _, newValue ->
             val timeRange = newValue.toString().trim()
