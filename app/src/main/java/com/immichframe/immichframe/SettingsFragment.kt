@@ -59,20 +59,25 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
 
         // keep screen on setting - toggles screen dimming category visibility
+        // show screen dimming only if keep-on is set
+        // show screen timeout setting only if keep-on is not set
         chkKeepScreenOn?.setOnPreferenceChangeListener { _, newValue ->
             val value = newValue as Boolean
             screenDimmingCategory?.isVisible = value
             txtScreenTimeout?.isVisible = !value
+            if (!value) {
+                chkScreenDim?.isChecked = false
+                txtDimTime?.isVisible = false
             true
         }
 
         // validate screen on timeout value
         txtScreenTimeout?.setOnPreferenceChangeListener { _, newValue ->
             val value = newValue.toString().toIntOrNull()
-            if (value != null && value > 0) {
+            if (value != null && value in 1..1440) {
                 true
             } else {
-                Toast.makeText(requireContext(), "Please enter a valid number of minutes", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Please enter a value between 1 and 1440 minutes (24 hours)", Toast.LENGTH_SHORT).show()
                 false
             }
         }

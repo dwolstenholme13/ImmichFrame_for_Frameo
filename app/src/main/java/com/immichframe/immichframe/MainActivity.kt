@@ -799,6 +799,7 @@ class MainActivity : AppCompatActivity() {
         } else {
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             val timeoutMinutes = prefs.getString("screenTimeout", "10")?.toIntOrNull() ?: 10
+
             // capture original system timeout once if we haven't yet
             if (originalScreenTimeout == -1) {
                 originalScreenTimeout = Settings.System.getInt(
@@ -948,6 +949,7 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         rcpServer.stop()
         handler.removeCallbacksAndMessages(null)
+
         // restore timeout if we changed it
         if (originalScreenTimeout != -1) {
             setScreenTimeout(originalScreenTimeout)
