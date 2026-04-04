@@ -43,6 +43,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val keepScreenOn = chkKeepScreenOn?.isChecked ?: false
         screenDimmingCategory?.isVisible = keepScreenOn
         txtScreenTimeout?.isVisible = !keepScreenOn
+        if (!keepScreenOn) {
+            chkScreenDim?.isChecked = false
+            txtDimTime?.isVisible = false
+        }
         
         val screenDim = chkScreenDim?.isChecked ?: false
         txtDimTime?.isVisible = screenDim
@@ -152,8 +156,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
 
         // get dimming time range setting from input string
-        val timePref = findPreference<EditTextPreference>("dim_time_range")
-        timePref?.setOnPreferenceChangeListener { _, newValue ->
+        txtFimeTime?.setOnPreferenceChangeListener { _, newValue ->
             val timeRange = newValue.toString().trim()
 
             val regex = "^([01]?[0-9]|2[0-3]):([0-5][0-9])-([01]?[0-9]|2[0-3]):([0-5][0-9])$".toRegex()
