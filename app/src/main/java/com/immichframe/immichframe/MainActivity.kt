@@ -80,6 +80,7 @@ class MainActivity : AppCompatActivity() {
     private var currentImage: Helpers.ImageResponse? = null
     private var portraitCache: Helpers.ImageResponse? = null
     private var originalScreenTimeout: Int = -1
+    private var isSnoozing = false
     private val imageRunnable = object : Runnable {
         override fun run() {
             if (isImageTimerRunning) {
@@ -100,6 +101,12 @@ class MainActivity : AppCompatActivity() {
         override fun run() {
             checkDimTime()
             handler.postDelayed(this, 30000)
+        }
+    }
+    private val redimRunnable = object : Runnable {
+        override fun run() {
+            isSnoozing = false
+            screenDim(true)
         }
     }
     private var isShowingFirst = true
@@ -524,7 +531,7 @@ class MainActivity : AppCompatActivity() {
             handler.post(dimCheckRunnable)
         } else {
             handler.removeCallbacks(dimCheckRunnable)
-            dimOverlay.visibility = View.GONE
+            removeDimOverlay()
             val lp = WindowManager.LayoutParams()
             lp.copyFrom(window.attributes)
             lp.screenBrightness = 1f
@@ -810,10 +817,54 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // show the black overlay and pause activity
+    private fun applyDimOverlay() {
+        if (dimOverlay.visibility != View.VISIBLE || dimOverlay.alpha < 0.5f) {
+            dimOverlay.apply {
+                visibility = View.VISIBLE
+                alpha = 0f
+                if (useWebView) {
+                    webView.loadUrl("about:blank")
+                } else {
+                    stopImageTimer()
+                    stopWeatherTimer()
+                }
+                animate()
+                    .alpha(0.99f)
+                    .setDuration(500L)
+                    .start()
+            }
+
+            // display message to user that screen is going to sleep
+            Toast.makeText(
+                this@MainActivity,
+                "Going to sleep",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    // hide the black overlay and resume activity
+    private fun removeDimOverlay() {
+        // remove black overlay and restore webview settings
+        handler.removeCallbacks(redimRunnable)
+        if (dimOverlay.isVisible) {
+            dimOverlay.animate()
+                .alpha(0f)
+                .setDuration(500L)
+                .withEndAction {
+                    dimOverlay.visibility = View.GONE
+                    loadSettings() // Restores WebView and timers
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                        setShowWhenLocked(false)
+                    }
+                }
+                .start()
+        }
+    }
+
     @Suppress("DEPRECATION")
     private fun screenDim(dim: Boolean) {
-        if (dim == dimOverlay.isVisible) return
-
         if (dim) {
             // save user's screen timeout and set to 3s to show "going to sleep" message
             if (originalScreenTimeout == -1) {
@@ -826,29 +877,7 @@ class MainActivity : AppCompatActivity() {
             // create black overlay, set webview to blank to reduce activity, and
             // wait for screen to go to sleep after inactivity
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-            if (dimOverlay.visibility != View.VISIBLE) {
-                dimOverlay.apply {
-                    visibility = View.VISIBLE
-                    alpha = 0f
-                    if (useWebView) {
-                        webView.loadUrl("about:blank")
-                    } else {
-                        stopImageTimer()
-                        stopWeatherTimer()
-                    }
-                    animate()
-                        .alpha(0.99f)
-                        .setDuration(500L)
-                        .start()
-                }
-            }
-
-            // display message to user that screen is going to sleep
-            Toast.makeText(
-                this@MainActivity,
-                "Going to sleep",
-                Toast.LENGTH_LONG
-            ).show()
+            applyDimOverlay()
 
         } else {
             // restore user's screen timeout value
@@ -867,21 +896,8 @@ class MainActivity : AppCompatActivity() {
             wakeLock.acquire(10 * 1000L)  // 10 second timeout
             wakeLock.release()
 
-            // remove black overlay and restore webview settings
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-            if (dimOverlay.isVisible) {
-                dimOverlay.animate()
-                    .alpha(0f)
-                    .setDuration(500L)
-                    .withEndAction {
-                        dimOverlay.visibility = View.GONE
-                        loadSettings()
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-                            setShowWhenLocked(false)
-                        }
-                    }
-                    .start()
-            }
+            removeDimOverlay()
 
             // turn screen back on, dismissing keyguard lockscreen
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
@@ -923,9 +939,11 @@ class MainActivity : AppCompatActivity() {
             }
 
         val isOverlayVisible = dimOverlay.isVisible
-        if (shouldDim && !isOverlayVisible) {
+        if (shouldDim && !isOverlayVisible && !isSnoozing) {
+            isSnoozing = false
             screenDim(true)
         } else if (!shouldDim && isOverlayVisible) {
+            isSnoozing = false
             screenDim(false)
         }
     }
@@ -940,7 +958,17 @@ class MainActivity : AppCompatActivity() {
     // called when user returns to app
     override fun onResume() {
         super.onResume()
-        applyScreenTimeout()
+
+        // if we are already in dim state, but screen just woke up,
+        // hide overlay and schedule screen to re-dim in 30 seconds
+        if (dimOverlay.isVisible) {
+            isSnoozing = true
+            setScreenTimeout(40000)
+            removeDimOverlay()
+            handler.postDelayed(redimRunnable, 30000)
+        } else {
+            applyScreenTimeout()
+        }
         hideSystemUI()
     }
 

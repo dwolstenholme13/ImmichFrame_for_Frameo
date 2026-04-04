@@ -68,6 +68,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             if (!value) {
                 chkScreenDim?.isChecked = false
                 txtDimTime?.isVisible = false
+            }
             true
         }
 
