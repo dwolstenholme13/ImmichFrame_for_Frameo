@@ -156,7 +156,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
 
         // get dimming time range setting from input string
-        txtFimeTime?.setOnPreferenceChangeListener { _, newValue ->
+        txtDimTime?.setOnPreferenceChangeListener { _, newValue ->
             val timeRange = newValue.toString().trim()
 
             val regex = "^([01]?[0-9]|2[0-3]):([0-5][0-9])-([01]?[0-9]|2[0-3]):([0-5][0-9])$".toRegex()
