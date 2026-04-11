@@ -522,21 +522,24 @@ class MainActivity : AppCompatActivity() {
         swipeRefreshLayout.isEnabled = !settingsLock
         txtPhotoInfo.visibility = View.GONE //enabled in onSettingsLoaded based on server settings
         txtDateTime.visibility = View.GONE //enabled in onSettingsLoaded based on server settings
+
         if (keepScreenOn) {
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         } else {
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
+
+        handler.removeCallbacks(dimCheckRunnable)
         if (screenDim) {
             handler.post(dimCheckRunnable)
         } else {
-            handler.removeCallbacks(dimCheckRunnable)
             removeDimOverlay()
             val lp = WindowManager.LayoutParams()
             lp.copyFrom(window.attributes)
             lp.screenBrightness = 1f
             window.attributes = lp
         }
+
         if (useWebView) {
             savedUrl = if (authSecret.isNotEmpty()) {
                 savedUrl.toUri()
