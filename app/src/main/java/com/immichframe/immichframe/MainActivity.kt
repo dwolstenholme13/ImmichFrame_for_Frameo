@@ -120,7 +120,7 @@ class MainActivity : AppCompatActivity() {
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        //force dark mode
+        // force dark mode
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
         super.onCreate(savedInstanceState)
 
@@ -510,7 +510,7 @@ class MainActivity : AppCompatActivity() {
         useWebView = prefs.getBoolean("useWebView", true)
         keepScreenOn = prefs.getBoolean("keepScreenOn", true)
         val authSecret = prefs.getString("authSecret", "") ?: ""
-        val screenDim = prefs.getBoolean("screenDim", false)
+        val screenDimming = prefs.getBoolean("screenDim", false)
         val settingsLock = prefs.getBoolean("settingsLock", false)
 
         webView.visibility = if (useWebView) View.VISIBLE else View.GONE
@@ -530,7 +530,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         handler.removeCallbacks(dimCheckRunnable)
-        if (screenDim) {
+        if (screenDimming) {
             handler.post(dimCheckRunnable)
         } else {
             removeDimOverlay()

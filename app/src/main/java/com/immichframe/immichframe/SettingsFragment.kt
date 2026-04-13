@@ -26,7 +26,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val chkKeepScreenOn = findPreference<SwitchPreferenceCompat>("keepScreenOn")
         val txtScreenTimeout = findPreference<EditTextPreference>("screenTimeout")
         val screenDimmingCategory = findPreference<PreferenceCategory>("screenDimmingCategory")
-        val chkScreenDim = findPreference<SwitchPreferenceCompat>("screenDim")
+        val chkScreenDimming = findPreference<SwitchPreferenceCompat>("screenDimming")
         val txtDimTime = findPreference<EditTextPreference>("dim_time_range")
 
         // obfuscate the authSecret
@@ -44,12 +44,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
         screenDimmingCategory?.isVisible = keepScreenOn
         txtScreenTimeout?.isVisible = !keepScreenOn
         if (!keepScreenOn) {
-            chkScreenDim?.isChecked = false
+            chkScreenDimming?.isChecked = false
             txtDimTime?.isVisible = false
         }
         
-        val screenDim = chkScreenDim?.isChecked ?: false
-        txtDimTime?.isVisible = screenDim
+        val screenDimming = chkScreenDimming?.isChecked ?: false
+        txtDimTime?.isVisible = screenDimming
 
         // React to changes
 
@@ -70,7 +70,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             screenDimmingCategory?.isVisible = value
             txtScreenTimeout?.isVisible = !value
             if (!value) {
-                chkScreenDim?.isChecked = false
+                chkScreenDimming?.isChecked = false
                 txtDimTime?.isVisible = false
             }
             true
@@ -88,7 +88,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
 
         // screen dimming setting - dimming time becomes visible if set
-        chkScreenDim?.setOnPreferenceChangeListener { _, newValue ->
+        chkScreenDimming?.setOnPreferenceChangeListener { _, newValue ->
             val value = newValue as Boolean
             txtDimTime?.isVisible = value
             true

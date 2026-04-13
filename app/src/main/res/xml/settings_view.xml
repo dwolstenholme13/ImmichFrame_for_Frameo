@@ -46,11 +46,11 @@
         android:title="Screen Dimming">
         <SwitchPreferenceCompat
             android:defaultValue="false"
-            android:key="screenDim"
+            android:key="screenDimming"
             android:title="Set Screen Dimming Hours" />
         <EditTextPreference
             android:defaultValue=""
-            android:dependency="screenDim"
+            android:dependency="screenDimming"
             android:key="dim_time_range"
             android:summary="e.g. 22:00-07:00"
             android:title="Dimming Time Range" />
