@@ -3,6 +3,8 @@ package com.immichframe.immichframe
 import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
 import android.annotation.SuppressLint
+import android.app.KeyguardManager
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -10,6 +12,8 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
+import android.provider.Settings
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.RelativeSizeSpan
@@ -75,6 +79,8 @@ class MainActivity : AppCompatActivity() {
     private var previousImage: Helpers.ImageResponse? = null
     private var currentImage: Helpers.ImageResponse? = null
     private var portraitCache: Helpers.ImageResponse? = null
+    private var originalScreenTimeout: Int = -1
+    private var isSnoozing = false
     private val imageRunnable = object : Runnable {
         override fun run() {
             if (isImageTimerRunning) {
@@ -97,18 +103,28 @@ class MainActivity : AppCompatActivity() {
             handler.postDelayed(this, 30000)
         }
     }
+    private val redimRunnable = object : Runnable {
+        // redim the screen and turn off the snooze flag when the snooze period is over
+        override fun run() {
+            isSnoozing = false
+            screenDim(true)
+        }
+    }
     private var isShowingFirst = true
     private var zoomAnimator: ObjectAnimator? = null
 
     private val settingsLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            // Always reset snooze and reload settings when returning from settings screen
             if (result.resultCode == RESULT_OK) {
+                isSnoozing = false
+                handler.removeCallbacks(redimRunnable)
                 loadSettings()
             }
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        //force dark mode
+        // force dark mode
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
         super.onCreate(savedInstanceState)
 
@@ -488,6 +504,7 @@ class MainActivity : AppCompatActivity() {
         attemptFetch()
     }
 
+    // called when app starts and when user returns from settings screen
     @SuppressLint("SetJavaScriptEnabled")
     private fun loadSettings() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(applicationContext)
@@ -497,7 +514,7 @@ class MainActivity : AppCompatActivity() {
         useWebView = prefs.getBoolean("useWebView", true)
         keepScreenOn = prefs.getBoolean("keepScreenOn", true)
         val authSecret = prefs.getString("authSecret", "") ?: ""
-        val screenDim = prefs.getBoolean("screenDim", false)
+        val screenDimming = prefs.getBoolean("screenDimming", false)
         val settingsLock = prefs.getBoolean("settingsLock", false)
 
         webView.visibility = if (useWebView) View.VISIBLE else View.GONE
@@ -509,21 +526,24 @@ class MainActivity : AppCompatActivity() {
         swipeRefreshLayout.isEnabled = !settingsLock
         txtPhotoInfo.visibility = View.GONE //enabled in onSettingsLoaded based on server settings
         txtDateTime.visibility = View.GONE //enabled in onSettingsLoaded based on server settings
+
         if (keepScreenOn) {
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         } else {
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
-        if (screenDim) {
+
+        handler.removeCallbacks(dimCheckRunnable)
+        if (screenDimming) {
             handler.post(dimCheckRunnable)
         } else {
-            handler.removeCallbacks(dimCheckRunnable)
-            dimOverlay.visibility = View.GONE
+            removeDimOverlay()
             val lp = WindowManager.LayoutParams()
             lp.copyFrom(window.attributes)
             lp.screenBrightness = 1f
             window.attributes = lp
         }
+
         if (useWebView) {
             savedUrl = if (authSecret.isNotEmpty()) {
                 savedUrl.toUri()
@@ -607,6 +627,7 @@ class MainActivity : AppCompatActivity() {
                 }
             )
         }
+        applyScreenTimeout()
     }
 
     private fun onSettingsLoaded() {
@@ -770,55 +791,157 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun screenDim(dim: Boolean) {
-        val lp = window.attributes
-        if (dim) {
-            lp.screenBrightness = 0.01f
-            window.attributes = lp
-            if (dimOverlay.visibility != View.VISIBLE) {
-                dimOverlay.apply {
-                    visibility = View.VISIBLE
-                    alpha = 0f
-                    if (useWebView) {
-                        webView.loadUrl("about:blank")
-                    } else {
-                        stopImageTimer()
-                        stopWeatherTimer()
-                    }
-                    animate()
-                        .alpha(0.99f)
-                        .setDuration(500L)
-                        .start()
-                }
-            }
+    // set screen timeout in Android settings in microseconds
+    private fun setScreenTimeout(timeout: Int) {
+        try {
+            Settings.System.putInt(
+                contentResolver,
+                Settings.System.SCREEN_OFF_TIMEOUT,
+                timeout
+            )
+        } catch (e: Exception) {
+            Log.e("Settings", "Could not set screen timeout: ${e.message}")
+        }
+    }
+
+    // apply user-entered screen timeout value
+    private fun applyScreenTimeout() {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(applicationContext)
+
+        if (keepScreenOn) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         } else {
-            lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
-            window.attributes = lp
-            if (dimOverlay.isVisible) {
-                dimOverlay.animate()
-                    .alpha(0f)
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            val timeoutMinutes = prefs.getString("screenTimeout", "10")?.toIntOrNull() ?: 10
+
+            // capture original system timeout once if we haven't yet
+            if (originalScreenTimeout == -1) {
+                originalScreenTimeout = Settings.System.getInt(
+                    contentResolver, Settings.System.SCREEN_OFF_TIMEOUT, 30000
+                )
+            }
+            setScreenTimeout(timeoutMinutes * 60 * 1000)
+        }
+    }
+
+    // show the black overlay and pause activity
+    private fun applyDimOverlay() {
+        if (dimOverlay.visibility != View.VISIBLE || dimOverlay.alpha < 0.5f) {
+            dimOverlay.apply {
+                visibility = View.VISIBLE
+                alpha = 0f
+                if (useWebView) {
+                    webView.loadUrl("about:blank")
+                } else {
+                    stopImageTimer()
+                    stopWeatherTimer()
+                }
+                animate()
+                    .alpha(0.99f)
                     .setDuration(500L)
-                    .withEndAction {
-                        dimOverlay.visibility = View.GONE
-                        loadSettings()
-                    }
                     .start()
+            }
+
+            // display message to user that screen is going to sleep
+            Toast.makeText(
+                this@MainActivity,
+                "Going to sleep",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    // hide the black overlay and resume activity
+    private fun removeDimOverlay() {
+        // remove black overlay and restore webview settings
+        handler.removeCallbacks(redimRunnable)
+        if (dimOverlay.isVisible) {
+            dimOverlay.animate()
+                .alpha(0f)
+                .setDuration(500L)
+                .withEndAction {
+                    dimOverlay.visibility = View.GONE
+                    loadSettings() // Restores WebView and timers
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                        setShowWhenLocked(false)
+                    }
+                }
+                .start()
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun screenDim(dim: Boolean) {
+        if (dim) {
+            // save user's screen timeout and set to 3s to show "going to sleep" message
+            if (originalScreenTimeout == -1) {
+                originalScreenTimeout = Settings.System.getInt(
+                    contentResolver, Settings.System.SCREEN_OFF_TIMEOUT, 30000
+                )
+            }
+            setScreenTimeout(3000)
+
+            // create black overlay, set webview to blank to reduce activity, and
+            // wait for screen to go to sleep after inactivity
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            applyDimOverlay()
+
+        } else {
+            // restore user's screen timeout value
+            if (originalScreenTimeout != -1) {
+                setScreenTimeout(originalScreenTimeout)
+                originalScreenTimeout = -1
+            }
+
+            // acquire WakeLock to turn screen on for short time, just to wake device
+            // FLAG_KEEP_SCREEN_ON will keep it on afterwards
+            val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+            val wakeLock = powerManager.newWakeLock(
+                PowerManager.SCREEN_BRIGHT_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP,
+                "ImmichFrame:WakeLockTag"
+            )
+            wakeLock.acquire(10 * 1000L)  // 10 second timeout
+            wakeLock.release()
+
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            removeDimOverlay()
+
+            // turn screen back on, dismissing keyguard lockscreen
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                setShowWhenLocked(true)
+                setTurnScreenOn(true)
+                val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+                keyguardManager.requestDismissKeyguard(this, null)
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+                keyguardManager.requestDismissKeyguard(this, null)
+                window.addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+                                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED)
+
+            } else {
+                window.addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+                                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                                WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD)
             }
         }
     }
 
+    // compare the current time with the dimming time setting and dim/undim the screen if necessary
     private fun checkDimTime() {
+        // get the dimming time setting from preferences
         val prefs = PreferenceManager.getDefaultSharedPreferences(applicationContext)
         val startHour = prefs.getInt("dimStartHour", 22)
         val startMinute = prefs.getInt("dimStartMinute", 0)
         val endHour = prefs.getInt("dimEndHour", 6)
         val endMinute = prefs.getInt("dimEndMinute", 0)
 
+        // find starting and ending dimming times in total minutes (out of 24h) and the current minutes
         val now = Calendar.getInstance()
         val nowMinutes = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
         val startMinutes = startHour * 60 + startMinute
         val endMinutes = endHour * 60 + endMinute
 
+        // compare dimming window start/end with current minutes to see if screen should be dimmed
         val shouldDim =
             if (startMinutes < endMinutes) {
                 nowMinutes in startMinutes until endMinutes
@@ -826,10 +949,12 @@ class MainActivity : AppCompatActivity() {
                 nowMinutes !in endMinutes until startMinutes
             }
 
+        // dim or undim as necessary
         val isOverlayVisible = dimOverlay.isVisible
-        if (shouldDim && !isOverlayVisible) {
+        if (shouldDim && !isOverlayVisible && !isSnoozing) {
             screenDim(true)
         } else if (!shouldDim && isOverlayVisible) {
+            isSnoozing = false
             screenDim(false)
         }
     }
@@ -841,21 +966,33 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // called when user returns to app
     override fun onResume() {
         super.onResume()
-        if (keepScreenOn) {
-            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
+        // if we are already in dim state, but screen just woke up,
+        // hide overlay and schedule screen to re-dim in 30 seconds
+        if (dimOverlay.isVisible) {
+            isSnoozing = true
+            screenDim(false)
+            setScreenTimeout(40000)
+            handler.postDelayed(redimRunnable, 30000)
         } else {
-            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            applyScreenTimeout()
         }
         hideSystemUI()
-
     }
 
+    // called when app is closed
     override fun onDestroy() {
         super.onDestroy()
         rcpServer.stop()
         handler.removeCallbacksAndMessages(null)
+
+        // restore timeout if we changed it
+        if (originalScreenTimeout != -1) {
+            setScreenTimeout(originalScreenTimeout)
+        }
     }
 
     private fun loadWebViewWithRetry(

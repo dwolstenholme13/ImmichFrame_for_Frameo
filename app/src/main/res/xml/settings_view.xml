@@ -16,36 +16,44 @@
         <SwitchPreferenceCompat
             android:defaultValue="true"
             android:key="useWebView"
-            android:title="Use WebView?" />
+            android:title="Use WebView" />
         <SwitchPreferenceCompat
             android:defaultValue="true"
             android:key="keepScreenOn"
-            android:title="Keep Screen On?" />
+            android:title="Keep Screen On" />
+        <EditTextPreference
+            android:defaultValue="10"
+            android:inputType="number"
+            android:key="screenTimeout"
+            android:summary="Minutes before screen turns off"
+            android:title="Screen Timeout" />
         <SwitchPreferenceCompat
             android:defaultValue="false"
             android:key="blurredBackground"
-            android:title="Blurred Background?" />
+            android:title="Blurred Background" />
         <SwitchPreferenceCompat
             android:defaultValue="false"
             android:key="showCurrentDate"
-            android:title="Show Current Date?" />
+            android:title="Show Current Date" />
         <SwitchPreferenceCompat
             android:defaultValue="false"
             android:key="settingsLock"
-            android:title="Lock access to these settings?" />
+            android:title="Lock access to settings" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="Screen Dimming">
+    <PreferenceCategory
+        android:key="screenDimmingCategory"
+        android:title="Screen Dimming">
         <SwitchPreferenceCompat
             android:defaultValue="false"
-            android:key="screenDim"
-            android:title="Set Screen Dim Hours?" />
+            android:key="screenDimming"
+            android:title="Set Screen Dimming Hours" />
         <EditTextPreference
             android:defaultValue=""
-            android:dependency="screenDim"
+            android:dependency="screenDimming"
             android:key="dim_time_range"
-            android:summary="e.g., 22:00-07:00"
-            android:title="Dim Time Range" />
+            android:summary="e.g. 22:00-07:00"
+            android:title="Dimming Time Range" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="Android Settings">
