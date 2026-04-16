@@ -104,6 +104,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
     private val redimRunnable = object : Runnable {
+        // redim the screen and turn off the snooze flag when the snooze period is over
         override fun run() {
             isSnoozing = false
             screenDim(true)
@@ -114,7 +115,10 @@ class MainActivity : AppCompatActivity() {
 
     private val settingsLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            // Always reset snooze and reload settings when returning from settings screen
             if (result.resultCode == RESULT_OK) {
+                isSnoozing = false
+                handler.removeCallbacks(redimRunnable)
                 loadSettings()
             }
         }
@@ -510,7 +514,7 @@ class MainActivity : AppCompatActivity() {
         useWebView = prefs.getBoolean("useWebView", true)
         keepScreenOn = prefs.getBoolean("keepScreenOn", true)
         val authSecret = prefs.getString("authSecret", "") ?: ""
-        val screenDimming = prefs.getBoolean("screenDim", false)
+        val screenDimming = prefs.getBoolean("screenDimming", false)
         val settingsLock = prefs.getBoolean("settingsLock", false)
 
         webView.visibility = if (useWebView) View.VISIBLE else View.GONE
@@ -922,18 +926,22 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // compare the current time with the dimming time setting and dim/undim the screen if necessary
     private fun checkDimTime() {
+        // get the dimming time setting from preferences
         val prefs = PreferenceManager.getDefaultSharedPreferences(applicationContext)
         val startHour = prefs.getInt("dimStartHour", 22)
         val startMinute = prefs.getInt("dimStartMinute", 0)
         val endHour = prefs.getInt("dimEndHour", 6)
         val endMinute = prefs.getInt("dimEndMinute", 0)
 
+        // find starting and ending dimming times in total minutes (out of 24h) and the current minutes
         val now = Calendar.getInstance()
         val nowMinutes = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
         val startMinutes = startHour * 60 + startMinute
         val endMinutes = endHour * 60 + endMinute
 
+        // compare dimming window start/end with current minutes to see if screen should be dimmed
         val shouldDim =
             if (startMinutes < endMinutes) {
                 nowMinutes in startMinutes until endMinutes
@@ -941,9 +949,9 @@ class MainActivity : AppCompatActivity() {
                 nowMinutes !in endMinutes until startMinutes
             }
 
+        // dim or undim as necessary
         val isOverlayVisible = dimOverlay.isVisible
         if (shouldDim && !isOverlayVisible && !isSnoozing) {
-            isSnoozing = false
             screenDim(true)
         } else if (!shouldDim && isOverlayVisible) {
             isSnoozing = false
@@ -966,8 +974,8 @@ class MainActivity : AppCompatActivity() {
         // hide overlay and schedule screen to re-dim in 30 seconds
         if (dimOverlay.isVisible) {
             isSnoozing = true
+            screenDim(false)
             setScreenTimeout(40000)
-            removeDimOverlay()
             handler.postDelayed(redimRunnable, 30000)
         } else {
             applyScreenTimeout()
