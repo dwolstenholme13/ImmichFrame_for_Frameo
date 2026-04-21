@@ -156,6 +156,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         // check for app updates
         val btnUpdate = findPreference<Preference>("checkForUpdates")
+        val currentVersion = try {
+            val pInfo = requireContext().packageManager.getPackageInfo(requireContext().packageName, 0)
+            pInfo.versionName ?: "Unknown"
+        } catch (e: Exception) {
+            "Unknown"
+        }
+        btnUpdate?.summary = "Check for a new app version (Current: $currentVersion)"
         btnUpdate?.setOnPreferenceClickListener {
             UpdateHelper.checkForUpdate(requireContext())
             true
