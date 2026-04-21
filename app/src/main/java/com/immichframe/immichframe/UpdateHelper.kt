@@ -79,24 +79,30 @@ object UpdateHelper {
     }
 
     // determine if version on server is newer than current version or not
+    // version string has 4 parts (e.g. 1.0.48.1), with the last number being this project's version
+    // number because it's a fork of ImmichFrame Android which has 3 parts (e.g. 1.0.48)
     private fun isNewerVersion(context: Context, latestTag: String): Boolean {
         val currentVersion = try {
             val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            pInfo.versionName ?: "0.0.0"
+            pInfo.versionName ?: "0.0.0.0"
         } catch (e: Exception) {
-            "0.0.0"
+            "0.0.0.0"
         }
 
         val cleanLatest = latestTag.removePrefix("v").trim()
         val cleanCurrent = currentVersion.removePrefix("v").trim()
+        Toast.makeText(context, "Current version ${cleanCurrent}, available version ${cleanLatest}", Toast.LENGTH_SHORT).show() // debug
 
         val latestParts = cleanLatest.split(".").mapNotNull { it.toIntOrNull() }
         val currentParts = cleanCurrent.split(".").mapNotNull { it.toIntOrNull() }
 
-        val length = maxOf(latestParts.size, currentParts.size)
+        // compare each version number part starting at most major
+        // git tag usually omits first two values, so ignore those
+        val relevantCurrent = currentParts.drop(currentParts.size - latestParts.size)
+        val length = maxOf(latestParts.size, relevantCurrent.size)
         for (i in 0 until length) {
             val latestPart = latestParts.getOrElse(i) { 0 }
-            val currentPart = currentParts.getOrElse(i) { 0 }
+            val currentPart = relevantCurrent.getOrElse(i) { 0 }
             if (latestPart > currentPart) return true
             if (latestPart < currentPart) return false
         }
@@ -194,7 +200,12 @@ object UpdateHelper {
                 }
             }
         }
-        context.registerReceiver(onComplete, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
+        val receiverFlags = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            Context.RECEIVER_EXPORTED
+        } else {
+            0
+        }
+        context.registerReceiver(onComplete, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), receiverFlags)
     }
 
     // install APK file
