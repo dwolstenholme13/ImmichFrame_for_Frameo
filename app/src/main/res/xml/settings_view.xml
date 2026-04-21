@@ -56,7 +56,11 @@
             android:title="Dimming Time Range" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="Android Settings">
+    <PreferenceCategory android:title="Other">
+        <Preference
+            android:key="checkForUpdates"
+            android:title="Check for Updates"
+            android:summary="Check for a new app version" />
         <Preference
             android:defaultValue=""
             android:key="androidSettings"

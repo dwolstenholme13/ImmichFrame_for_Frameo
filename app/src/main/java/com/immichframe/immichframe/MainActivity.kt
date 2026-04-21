@@ -190,6 +190,7 @@ class MainActivity : AppCompatActivity() {
             settingsLauncher.launch(intent)
         } else {
             loadSettings()
+            UpdateHelper.checkForUpdate(this, showNoUpdateToast = true)
         }
     }
 

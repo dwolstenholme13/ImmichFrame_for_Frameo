@@ -151,7 +151,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
             // Launch Android settings
             val intent = Intent(Settings.ACTION_SETTINGS)
             startActivity(intent)
+            true
+        }
 
+        // check for app updates
+        val btnUpdate = findPreference<Preference>("checkForUpdates")
+        btnUpdate?.setOnPreferenceClickListener {
+            UpdateHelper.checkForUpdate(requireContext())
             true
         }
 
