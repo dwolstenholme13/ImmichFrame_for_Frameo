@@ -91,7 +91,6 @@ object UpdateHelper {
 
         val cleanLatest = latestTag.removePrefix("v").trim()
         val cleanCurrent = currentVersion.removePrefix("v").trim()
-        Toast.makeText(context, "Current version ${cleanCurrent}, available version ${cleanLatest}", Toast.LENGTH_SHORT).show() // debug
 
         val latestParts = cleanLatest.split(".").mapNotNull { it.toIntOrNull() }
         val currentParts = cleanCurrent.split(".").mapNotNull { it.toIntOrNull() }
@@ -125,6 +124,12 @@ object UpdateHelper {
     private fun downloadAndInstall(context: Context, release: GitHubRelease) {
         val asset = release.assets.find { it.name.endsWith(".apk") } ?: return
         val url = asset.browser_download_url
+
+        // clean up any previous update files
+        val downloadDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+        downloadDir?.listFiles { _, name -> name.endsWith(".apk") }?.forEach {
+            try { it.delete() } catch (_: Exception) {}
+        }
 
         val request = DownloadManager.Request(Uri.parse(url))
             .setTitle("ImmichFrame for Frameo Update")
@@ -195,7 +200,21 @@ object UpdateHelper {
             override fun onReceive(ctxt: Context, intent: Intent) {
                 val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L)
                 if (id == downloadId) {
-                    installApk(context)
+                    val query = DownloadManager.Query().setFilterById(downloadId)
+                    val cursor = manager.query(query)
+                    if (cursor != null && cursor.moveToFirst()) {
+                        val status = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
+                        if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                            val uriString = cursor.getString(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_LOCAL_URI))
+                            if (uriString != null) {
+                                val file = File(Uri.parse(uriString).path!!)
+                                installApk(context, file)
+                            }
+                        } else {
+                            Toast.makeText(context, "Download failed", Toast.LENGTH_SHORT).show()
+                        }
+                        cursor.close()
+                    }
                     context.unregisterReceiver(this)
                 }
             }
@@ -209,10 +228,9 @@ object UpdateHelper {
     }
 
     // install APK file
-    private fun installApk(context: Context) {
-        val file = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "ImmichFrame_update.apk")
+    private fun installApk(context: Context, file: File) {
         if (!file.exists()) {
-            Toast.makeText(context, "Cannot find APK file in Downloads directory", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Cannot find downloaded APK file: ${file.name}", Toast.LENGTH_SHORT).show()
             return
         }
 
