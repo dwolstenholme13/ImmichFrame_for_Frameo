@@ -10,18 +10,19 @@
   <p>
 </div>
 
-This is a fork of [ImmichFrame Android](https://github.com/immichFrame/ImmichFrame_Android)
-specifically targeting Frameo devices. This project cannot be merged with the upstream project
-because its features for controlling the screen power are not allowed in apps distributed in the
-Play Store. For Frameo devices, this doesn't matter because the app is not distributed this way, and
-must be directly loaded using ADB.
+This is a fork of [ImmichFrame Android](https://github.com/immichFrame/ImmichFrame_Android) that
+specifically targets Frameo devices. This fork exists because its features for controlling the
+screen power are not allowed in apps distributed in the Play Store, and so this project cannot be
+merged with the upstream project. For Frameo devices, this doesn't matter because the app cannot be
+installed from the Play Store anyway and must be directly loaded using ADB for initial installation.
 
 I will try to follow the upstream branch, but I've also made various changes of my own which
 I think are better for use on these devices.
 
 My Frameo device is running Android 13, but I have attempted to maintain backwards compatibility
-with older Frameo devices. Please raise an Issue if you find a problem and I will help as best I
-can.
+with older Frameo devices. Please [raise an
+Issue](https://github.com/dwolstenholme13/ImmichFrame_for_Frameo/issues) if you find a problem and I
+will help as best I can.
 
 ## 📄 Documentation
 You can find the documentation for the original ImmichFrame Android project [here](https://immichframe.dev).
