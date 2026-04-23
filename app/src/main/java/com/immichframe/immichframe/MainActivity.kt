@@ -541,7 +541,7 @@ class MainActivity : AppCompatActivity() {
             removeDimOverlay()
             val lp = WindowManager.LayoutParams()
             lp.copyFrom(window.attributes)
-            lp.screenBrightness = 1f
+            lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
             window.attributes = lp
         }
 
@@ -729,7 +729,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun screenBrightnessAction(brightness: Float) {
         val lp = window.attributes
-        lp.screenBrightness = brightness
+        if (brightness < 0) {
+            lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+        } else {
+            lp.screenBrightness = brightness
+        }
         window.attributes = lp
     }
 
