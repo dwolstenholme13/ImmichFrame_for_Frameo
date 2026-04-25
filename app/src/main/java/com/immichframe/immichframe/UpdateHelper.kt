@@ -21,13 +21,12 @@ import retrofit2.Call
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
+import retrofit2.http.Path
 
 // this is a helper to check for app updates on GitHub, and if the user requests, download and
 // install the APK file found
 
 object UpdateHelper {
-    private const val GITHUB_OWNER = "dwolstenholme13"
-    private const val GITHUB_REPO = "ImmichFrame_for_Frameo"
     private const val BASE_URL = "https://api.github.com/"
 
     data class GitHubRelease(
@@ -42,8 +41,11 @@ object UpdateHelper {
     )
 
     interface GitHubService {
-        @GET("repos/$GITHUB_OWNER/$GITHUB_REPO/releases/latest")
-        fun getLatestRelease(): Call<GitHubRelease>
+        @GET("repos/{owner}/{repo}/releases/latest")
+        fun getLatestRelease(
+            @Path("owner") owner: String,
+            @Path("repo") repo: String
+        ): Call<GitHubRelease>
     }
 
     // check server for newer version
@@ -54,7 +56,9 @@ object UpdateHelper {
             .build()
 
         val service = retrofit.create(GitHubService::class.java)
-        service.getLatestRelease().enqueue(object : retrofit2.Callback<GitHubRelease> {
+        val owner = context.getString(R.string.github_owner)
+        val repo = context.getString(R.string.github_repo)
+        service.getLatestRelease(owner, repo).enqueue(object : retrofit2.Callback<GitHubRelease> {
             override fun onResponse(call: Call<GitHubRelease>, response: retrofit2.Response<GitHubRelease>) {
                 if (response.isSuccessful) {
                     val release = response.body()
@@ -132,10 +136,10 @@ object UpdateHelper {
         }
 
         val request = DownloadManager.Request(Uri.parse(url))
-            .setTitle("ImmichFrame for Frameo Update")
+            .setTitle("${context.getString(R.string.app_name)} Update")
             .setDescription("Downloading version ${release.tag_name}")
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            .setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, "ImmichFrame_update.apk")
+            .setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, "${context.getString(R.string.github_repo)}.${release.tag_name}.apk")
 
         val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
         val downloadId = manager.enqueue(request)

@@ -27,7 +27,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val txtScreenTimeout = findPreference<EditTextPreference>("screenTimeout")
         val screenDimmingCategory = findPreference<PreferenceCategory>("screenDimmingCategory")
         val chkScreenDimming = findPreference<SwitchPreferenceCompat>("screenDimming")
-        val txtDimTime = findPreference<EditTextPreference>("dim_time_range")
+        val txtDimTime = findPreference<EditTextPreference>("dimTimeRange")
 
         // obfuscate the authSecret
         val authPref = findPreference<EditTextPreference>("authSecret")
@@ -44,12 +44,16 @@ class SettingsFragment : PreferenceFragmentCompat() {
         screenDimmingCategory?.isVisible = keepScreenOn
         txtScreenTimeout?.isVisible = !keepScreenOn
         if (!keepScreenOn) {
+            txtScreenTimeout?.summary = "Screen turns off after ${txtScreenTimeout?.text ?: "10"} minutes"
             chkScreenDimming?.isChecked = false
             txtDimTime?.isVisible = false
         }
         
         val screenDimming = chkScreenDimming?.isChecked ?: false
         txtDimTime?.isVisible = screenDimming
+        if (screenDimming) {
+            updateDimSummary()
+        }
 
         // React to changes
 
@@ -76,10 +80,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
             true
         }
 
-        // validate screen on timeout value
+        // validate screen-on timeout value and update summary line
         txtScreenTimeout?.setOnPreferenceChangeListener { _, newValue ->
             val value = newValue.toString().toIntOrNull()
             if (value != null && value in 1..1440) {
+                txtScreenTimeout?.summary = "Screen turns off after $newValue minutes"
                 true
             } else {
                 Toast.makeText(requireContext(), "Please enter a value between 1 and 1440 minutes (24 hours)", Toast.LENGTH_SHORT).show()
@@ -187,11 +192,24 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     .putInt("dimEndMinute", endMinute)
                     .apply()
 
+                updateDimSummary()
                 true // Accept new value
             } else {
                 Toast.makeText(requireContext(), "Invalid time format. Use HH:mm-HH:mm.", Toast.LENGTH_LONG).show()
                 false // Reject value change
             }
         }
+    }
+
+    // update the summary line for the "Dimming Time Range" selection with the current setting
+    private fun updateDimSummary() {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        val startHour = prefs.getInt("dimStartHour", 22)
+        val startMinute = prefs.getInt("dimStartMinute", 0)
+        val endHour = prefs.getInt("dimEndHour", 6)
+        val endMinute = prefs.getInt("dimEndMinute", 0)
+
+        val txtDimTime = findPreference<EditTextPreference>("dimTimeRange")
+        txtDimTime?.summary = String.format("Current: %02d:%02d - %02d:%02d", startHour, startMinute, endHour, endMinute)
     }
 }

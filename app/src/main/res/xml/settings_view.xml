@@ -51,9 +51,9 @@
         <EditTextPreference
             android:defaultValue=""
             android:dependency="screenDimming"
-            android:key="dim_time_range"
+            android:key="dimTimeRange"
             android:summary="e.g. 22:00-07:00"
-            android:title="Dimming Time Range" />
+            android:title="Dimming Time Range (e.g. 22:00-07:00)" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="Other">

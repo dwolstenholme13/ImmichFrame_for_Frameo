@@ -1,0 +1,4 @@
+<resources>
+    <integer name="snooze_duration_sec">60</integer>
+    <integer name="weather_check_period_min">10</integer>
+</resources>
