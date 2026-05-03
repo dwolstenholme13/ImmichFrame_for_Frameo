@@ -15,9 +15,7 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import com.google.android.material.snackbar.Snackbar
 import java.io.File
 import retrofit2.Call
 import retrofit2.Retrofit
@@ -69,17 +67,17 @@ object UpdateHelper {
                         if (isNewerVersion(context, release.tag_name)) {
                             showUpdateDialog(anchorView, release)
                         } else if (showNoUpdateMsg) {
-                            showSnackbar(anchorView, "You are on the latest version")
+                            SnackbarHelper.show(anchorView, "You are on the latest version")
                         }
                     }
                 } else if (showNoUpdateMsg) {
-                    showSnackbar(anchorView, "Failed to check for updates")
+                    SnackbarHelper.show(anchorView, "Failed to check for updates")
                 }
             }
 
             override fun onFailure(call: Call<GitHubRelease>, t: Throwable) {
                 if (showNoUpdateMsg) {
-                    showSnackbar(anchorView, "Error checking for updates")
+                    SnackbarHelper.show(anchorView, "Error checking for updates")
                 }
             }
         })
@@ -219,7 +217,7 @@ object UpdateHelper {
                                 installApk(anchorView, file)
                             }
                         } else {
-                            showSnackbar(anchorView, "Download failed")
+                            SnackbarHelper.show(anchorView, "Download failed")
                         }
                         cursor.close()
                     }
@@ -238,7 +236,7 @@ object UpdateHelper {
     // install APK file
     private fun installApk(anchorView: View, file: File) {
         if (!file.exists()) {
-            showSnackbar(anchorView, "Cannot find downloaded APK file: ${file.name}")
+            SnackbarHelper.show(anchorView, "Cannot find downloaded APK file: ${file.name}")
             return
         }
 
@@ -250,34 +248,5 @@ object UpdateHelper {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         context.startActivity(intent)
-    }
-
-    // show information message with Snackbar, with ImmichFrame logo
-    private fun showSnackbar(view: View, message: String, isLong: Boolean = false) {
-        val duration = if (isLong) Snackbar.LENGTH_LONG else Snackbar.LENGTH_SHORT
-        view?.let { 
-            val snackbar = Snackbar.make(it, message, duration) 
-            val textView = snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
-
-            // center the text in the snackbar
-            textView.textAlignment = View.TEXT_ALIGNMENT_CENTER
-            textView.gravity = Gravity.CENTER_HORIZONTAL or Gravity.CENTER_VERTICAL
-
-            // add the ImmichFrame logo to the left of the text
-            //val logo = ContextCompat.getDrawable(it.context, R.drawable.immich_frame_foreground)
-            val logo = ContextCompat.getDrawable(it.context, R.mipmap.immich_frame_round)
-            val density = it.resources.displayMetrics.density.toInt()
-            val iconSize = 56 * density
-            logo?.setBounds(0, 0, iconSize, iconSize)
-            textView.setCompoundDrawables(logo, null, null, null)
-
-            // fix padding
-            textView.compoundDrawablePadding = 12 * density
-            val vPadding = 8 * density
-            val hPadding = 12 * density
-            snackbar.view.setPadding(hPadding, vPadding, hPadding, vPadding)
-
-            snackbar.show()
-        }
     }
 }

@@ -15,7 +15,6 @@ import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
 import androidx.preference.SwitchPreferenceCompat
-import com.google.android.material.snackbar.Snackbar
 
 class SettingsFragment : PreferenceFragmentCompat() {
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -87,7 +86,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 txtScreenTimeout?.summary = "Screen turns off after $newValue minutes"
                 true
             } else {
-                showSnackbar("Please enter a value between 1 and 1440 minutes (24 hours)")
+                SnackbarHelper.show(requireView(), "Please enter a value between 1 and 1440 minutes (24 hours)")
                 false
             }
         }
@@ -127,7 +126,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 .getString("webview_url", "")?.trim()
             val urlPattern = Regex("^https?://.+")
             return@setOnPreferenceClickListener if (url.isNullOrEmpty()|| !url.matches(urlPattern)) {
-                showSnackbar("Please enter a valid server URL.", isLong = true)
+                SnackbarHelper.show(requireView(), "Please enter a valid server URL.", isLong = true)
                 false
             } else {
                 activity?.setResult(Activity.RESULT_OK)
@@ -143,7 +142,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
             // Only show message + auto-return on Android 9 and below
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-                showSnackbar("Returning to app in 2 minutes…", isLong = true)
+                SnackbarHelper.show(requireView(), "Returning to app in 2 minutes…", isLong = true)
 
                 // Schedule return after 2 minutes
                 Handler(Looper.getMainLooper()).postDelayed({
@@ -195,7 +194,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 updateDimSummary()
                 true // Accept new value
             } else {
-                showSnackbar("Invalid time format. Use HH:mm-HH:mm.", isLong = true)
+                SnackbarHelper.show(requireView(), "Invalid time format. Use HH:mm-HH:mm.", isLong = true)
                 false // Reject value change
             }
         }
@@ -211,11 +210,5 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         val txtDimTime = findPreference<EditTextPreference>("dimTimeRange")
         txtDimTime?.summary = String.format("Current: %02d:%02d - %02d:%02d", startHour, startMinute, endHour, endMinute)
-    }
-
-    // show information message with Snackbar
-    private fun showSnackbar(message: String, isLong: Boolean = false) {
-        val duration = if (isLong) Snackbar.LENGTH_LONG else Snackbar.LENGTH_SHORT
-        view?.let { Snackbar.make(it, message, duration).show() }  // listeners only fire while fragment is active
     }
 }

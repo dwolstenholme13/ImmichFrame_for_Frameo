@@ -44,7 +44,6 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.google.android.material.snackbar.Snackbar
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -490,11 +489,10 @@ class MainActivity : AppCompatActivity() {
                     }
                     if (retryCount < maxRetries) {
                         retryCount++
-                        Snackbar.make(
+                        SnackbarHelper.show(
                             findViewById(android.R.id.content),
-                            "Retrying to fetch server settings... Attempt $retryCount of $maxRetries",
-                            Snackbar.LENGTH_SHORT
-                        ).show()
+                            "Retrying to fetch server settings... Attempt $retryCount of $maxRetries"
+                        )
                         Handler(Looper.getMainLooper()).postDelayed({
                             attemptFetch()
                         }, retryDelayMillis)
@@ -841,11 +839,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             // display message to user that screen is going to sleep
-            Snackbar.make(
-                findViewById(android.R.id.content),
-                "Going to sleep",
-                Snackbar.LENGTH_LONG
-            ).show()
+            SnackbarHelper.show(findViewById(android.R.id.content), "Going to sleep", isLong = true)
         }
     }
 
@@ -990,21 +984,11 @@ class MainActivity : AppCompatActivity() {
             if (reachable) {
                 webView.loadUrl(url)
             } else if (attempt <= maxAttempts) {
-                Snackbar.make(
-                    webView,
-                    "Connecting to server... Attempt $attempt of $maxAttempts",
-                    Snackbar.LENGTH_SHORT
-                ).show()
-
+                SnackbarHelper.show(webView, "Connecting to server... Attempt $attempt of $maxAttempts")
                 delay(5_000)
                 loadWebViewWithRetry(url, attempt + 1, maxAttempts)
             } else {
-                Snackbar.make(
-                    webView,
-                    "Could not connect to server after $maxAttempts attempts",
-                    Snackbar.LENGTH_LONG
-                ).show()
-
+                SnackbarHelper.show(webView, "Could not connect to server after $maxAttempts attempts", isLong = true)
                 webView.loadUrl(url)
             }
         }
