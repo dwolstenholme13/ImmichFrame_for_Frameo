@@ -25,7 +25,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.preference.PreferenceManager
-import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -635,21 +634,11 @@ class ScreenSaverService : DreamService() {
             if (reachable) {
                 webView.loadUrl(url)
             } else if (attempt <= maxAttempts) {
-                Snackbar.make(
-                    webView,
-                    "Connecting to server... Attempt $attempt of $maxAttempts",
-                    Snackbar.LENGTH_SHORT
-                ).show()
-
+                SnackbarHelper.show(webView, "Connecting to server... Attempt $attempt of $maxAttempts")
                 delay(5_000)
                 loadWebViewWithRetry(url, attempt + 1, maxAttempts)
             } else {
-                Snackbar.make(
-                    webView,
-                    "Could not connect to server after $maxAttempts attempts",
-                    Snackbar.LENGTH_LONG
-                ).show()
-
+                SnackbarHelper.show(webView, "Could not connect to server after $maxAttempts attempts")
                 webView.loadUrl(url)
             }
         }

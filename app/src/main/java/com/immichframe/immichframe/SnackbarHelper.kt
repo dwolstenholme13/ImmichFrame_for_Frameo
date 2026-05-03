@@ -1,5 +1,6 @@
 package com.immichframe.immichframe
 
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.widget.TextView
@@ -8,15 +9,17 @@ import com.google.android.material.snackbar.Snackbar
 
 // show information message with Snackbar, with ImmichFrame logo on left
 object SnackbarHelper {
-    fun show(view: View, message: String, isLong: Boolean = false) {
-        val duration = if (isLong) Snackbar.LENGTH_LONG else Snackbar.LENGTH_SHORT
+    private var durationMs = 4000  // use 4s delay for all snackbars
+
+    fun show(view: View, message: String) {
         view?.let { 
-            val snackbar = Snackbar.make(it, message, duration) 
+            val snackbar = Snackbar.make(it, message, durationMs) 
             val textView = snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
 
-            // center the text in the snackbar
+            // center the text in the snackbar and increase font size to 18sp
             textView.textAlignment = View.TEXT_ALIGNMENT_CENTER
             textView.gravity = Gravity.CENTER_HORIZONTAL or Gravity.CENTER_VERTICAL
+            textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
 
             // add the ImmichFrame logo to the left of the text
             //val logo = ContextCompat.getDrawable(it.context, R.drawable.immich_frame_foreground)

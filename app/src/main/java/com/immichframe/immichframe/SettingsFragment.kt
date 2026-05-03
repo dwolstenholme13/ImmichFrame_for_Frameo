@@ -126,7 +126,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 .getString("webview_url", "")?.trim()
             val urlPattern = Regex("^https?://.+")
             return@setOnPreferenceClickListener if (url.isNullOrEmpty()|| !url.matches(urlPattern)) {
-                SnackbarHelper.show(requireView(), "Please enter a valid server URL.", isLong = true)
+                SnackbarHelper.show(requireView(), "Please enter a valid server URL.")
                 false
             } else {
                 activity?.setResult(Activity.RESULT_OK)
@@ -142,7 +142,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
             // Only show message + auto-return on Android 9 and below
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-                SnackbarHelper.show(requireView(), "Returning to app in 2 minutes…", isLong = true)
+                SnackbarHelper.show(requireView(), "Returning to app in 2 minutes…")
 
                 // Schedule return after 2 minutes
                 Handler(Looper.getMainLooper()).postDelayed({
@@ -194,7 +194,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 updateDimSummary()
                 true // Accept new value
             } else {
-                SnackbarHelper.show(requireView(), "Invalid time format. Use HH:mm-HH:mm.", isLong = true)
+                SnackbarHelper.show(requireView(), "Invalid time format. Use HH:mm-HH:mm.")
                 false // Reject value change
             }
         }

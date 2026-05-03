@@ -839,7 +839,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             // display message to user that screen is going to sleep
-            SnackbarHelper.show(findViewById(android.R.id.content), "Going to sleep", isLong = true)
+            SnackbarHelper.show(findViewById(android.R.id.content), "Going to sleep")
         }
     }
 
@@ -988,7 +988,7 @@ class MainActivity : AppCompatActivity() {
                 delay(5_000)
                 loadWebViewWithRetry(url, attempt + 1, maxAttempts)
             } else {
-                SnackbarHelper.show(webView, "Could not connect to server after $maxAttempts attempts", isLong = true)
+                SnackbarHelper.show(webView, "Could not connect to server after $maxAttempts attempts")
                 webView.loadUrl(url)
             }
         }
