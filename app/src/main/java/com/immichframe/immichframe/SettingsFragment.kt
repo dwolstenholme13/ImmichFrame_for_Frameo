@@ -15,6 +15,7 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
+import androidx.preference.SeekBarPreference
 import androidx.preference.SwitchPreferenceCompat
 
 class SettingsFragment : PreferenceFragmentCompat() {
@@ -28,6 +29,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val screenDimmingCategory = findPreference<PreferenceCategory>("screenDimmingCategory")
         val chkScreenDimming = findPreference<SwitchPreferenceCompat>("screenDimming")
         val txtDimTime = findPreference<EditTextPreference>("dimTimeRange")
+        val brightnessPref = findPreference<SeekBarPreference>("manualBrightness")
 
         // obfuscate the authSecret
         val authPref = findPreference<EditTextPreference>("authSecret")
@@ -57,7 +59,21 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         // React to changes
 
+        // apply brightness setting dynamically
+        brightnessPref?.setOnPreferenceChangeListener { _, newValue ->
+            val brightness = (newValue as Int) / 100f  // brightness setting is 0.0f - 1.0f
+            val activity = activity
+            if (activity != null) {
+                val lp = activity.window.attributes
+                lp.screenBrightness = brightness
+                activity.window.attributes = lp
+            }
+            true
+        }
+
         // use Webview setting
+        // show blurred background setting only if WebView is not set
+        // show show current date setting only if WebView is not set
         chkUseWebView?.setOnPreferenceChangeListener { _, newValue ->
             val value = newValue as Boolean
             chkBlurredBackground?.isVisible = !value
@@ -67,7 +83,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
 
         // keep screen on setting - toggles screen dimming category visibility
-        // show screen dimming only if keep-on is set
+        // show screen dimming setting only if keep-on is set
         // show screen timeout setting only if keep-on is not set
         chkKeepScreenOn?.setOnPreferenceChangeListener { _, newValue ->
             val value = newValue as Boolean

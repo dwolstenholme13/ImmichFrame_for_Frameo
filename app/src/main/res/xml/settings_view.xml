@@ -1,4 +1,6 @@
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+<PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory android:title="Connection Settings">
         <EditTextPreference
@@ -13,6 +15,13 @@
     </PreferenceCategory>
 
     <PreferenceCategory android:title="Display Options">
+        <SeekBarPreference
+            android:key="manualBrightness"
+            android:title="Screen Brightness"
+            android:defaultValue="100"
+            android:max="100"
+            app:min="1"
+            app:showSeekBarValue="true" />
         <SwitchPreferenceCompat
             android:defaultValue="true"
             android:key="useWebView"
