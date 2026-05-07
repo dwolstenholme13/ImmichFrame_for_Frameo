@@ -518,6 +518,7 @@ class MainActivity : AppCompatActivity() {
         val authSecret = prefs.getString("authSecret", "") ?: ""
         val screenDimming = prefs.getBoolean("screenDimming", false)
         val settingsLock = prefs.getBoolean("settingsLock", false)
+        val manualBrightness = prefs.getInt("manualBrightness", 100)
 
         webView.visibility = if (useWebView) View.VISIBLE else View.GONE
         imageView1.visibility = if (useWebView) View.GONE else View.VISIBLE
@@ -530,16 +531,13 @@ class MainActivity : AppCompatActivity() {
         txtDateTime.visibility = View.GONE //enabled in onSettingsLoaded based on server settings
 
         applyScreenTimeout()
+        screenBrightnessAction(manualBrightness / 100f)  // brightness is 0.0f - 1.0f
 
         handler.removeCallbacks(dimCheckRunnable)
         if (screenDimming) {
             handler.post(dimCheckRunnable)
         } else {
             removeDimOverlay()
-            val lp = WindowManager.LayoutParams()
-            lp.copyFrom(window.attributes)
-            lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
-            window.attributes = lp
         }
 
         if (useWebView) {
@@ -723,6 +721,8 @@ class MainActivity : AppCompatActivity() {
         settingsLauncher.launch(intent)
     }
 
+    // set screen brightness for this window
+    // brightness: 0.0f - 1.0f (0 - 100%), negative value resets to system default
     private fun screenBrightnessAction(brightness: Float) {
         val lp = window.attributes
         if (brightness < 0) {
