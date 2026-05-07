@@ -10,10 +10,10 @@ import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
+import android.view.View
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.FileProvider
 import java.io.File
@@ -49,13 +49,14 @@ object UpdateHelper {
     }
 
     // check server for newer version
-    fun checkForUpdate(context: Context, showNoUpdateToast: Boolean = true) {
+    fun checkForUpdate(anchorView: View, showNoUpdateMsg: Boolean = true) {
         val retrofit = Retrofit.Builder()
             .baseUrl(BASE_URL)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
 
         val service = retrofit.create(GitHubService::class.java)
+        val context = anchorView.context
         val owner = context.getString(R.string.github_owner)
         val repo = context.getString(R.string.github_repo)
         service.getLatestRelease(owner, repo).enqueue(object : retrofit2.Callback<GitHubRelease> {
@@ -64,19 +65,19 @@ object UpdateHelper {
                     val release = response.body()
                     if (release != null) {
                         if (isNewerVersion(context, release.tag_name)) {
-                            showUpdateDialog(context, release)
-                        } else if (showNoUpdateToast) {
-                            Toast.makeText(context, "You are on the latest version", Toast.LENGTH_SHORT).show()
+                            showUpdateDialog(anchorView, release)
+                        } else if (showNoUpdateMsg) {
+                            SnackbarHelper.show(anchorView, "You are on the latest version")
                         }
                     }
-                } else if (showNoUpdateToast) {
-                    Toast.makeText(context, "Failed to check for updates", Toast.LENGTH_SHORT).show()
+                } else if (showNoUpdateMsg) {
+                    SnackbarHelper.show(anchorView, "Failed to check for updates")
                 }
             }
 
             override fun onFailure(call: Call<GitHubRelease>, t: Throwable) {
-                if (showNoUpdateToast) {
-                    Toast.makeText(context, "Error checking for updates", Toast.LENGTH_SHORT).show()
+                if (showNoUpdateMsg) {
+                    SnackbarHelper.show(anchorView, "Error checking for updates")
                 }
             }
         })
@@ -113,23 +114,24 @@ object UpdateHelper {
     }
 
     // show update dialog to user and get yes/no input
-    private fun showUpdateDialog(context: Context, release: GitHubRelease) {
-        AlertDialog.Builder(context)
+    private fun showUpdateDialog(anchorView: View, release: GitHubRelease) {
+        AlertDialog.Builder(anchorView.context)
             .setTitle("Update Available")
             .setMessage("Version ${release.tag_name} is available. Do you want to download and install it?\n\nRelease notes:\n${release.body}")
             .setPositiveButton("Download") { _, _ ->
-                downloadAndInstall(context, release)
+                downloadAndInstall(anchorView, release)
             }
             .setNegativeButton("Cancel", null)
             .show()
     }
 
     // download and install APK, showing progress bar
-    private fun downloadAndInstall(context: Context, release: GitHubRelease) {
+    private fun downloadAndInstall(anchorView: View, release: GitHubRelease) {
         val asset = release.assets.find { it.name.endsWith(".apk") } ?: return
         val url = asset.browser_download_url
 
         // clean up any previous update files
+        val context = anchorView.context
         val downloadDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
         downloadDir?.listFiles { _, name -> name.endsWith(".apk") }?.forEach {
             try { it.delete() } catch (_: Exception) {}
@@ -212,10 +214,10 @@ object UpdateHelper {
                             val uriString = cursor.getString(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_LOCAL_URI))
                             if (uriString != null) {
                                 val file = File(Uri.parse(uriString).path!!)
-                                installApk(context, file)
+                                installApk(anchorView, file)
                             }
                         } else {
-                            Toast.makeText(context, "Download failed", Toast.LENGTH_SHORT).show()
+                            SnackbarHelper.show(anchorView, "Download failed")
                         }
                         cursor.close()
                     }
@@ -232,12 +234,13 @@ object UpdateHelper {
     }
 
     // install APK file
-    private fun installApk(context: Context, file: File) {
+    private fun installApk(anchorView: View, file: File) {
         if (!file.exists()) {
-            Toast.makeText(context, "Cannot find downloaded APK file: ${file.name}", Toast.LENGTH_SHORT).show()
+            SnackbarHelper.show(anchorView, "Cannot find downloaded APK file: ${file.name}")
             return
         }
 
+        val context = anchorView.context
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
         val intent = Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(uri, "application/vnd.android.package-archive")

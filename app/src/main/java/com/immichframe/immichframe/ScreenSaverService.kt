@@ -634,21 +634,11 @@ class ScreenSaverService : DreamService() {
             if (reachable) {
                 webView.loadUrl(url)
             } else if (attempt <= maxAttempts) {
-                Toast.makeText(
-                    this@ScreenSaverService,
-                    "Connecting to server... Attempt $attempt of $maxAttempts",
-                    Toast.LENGTH_SHORT
-                ).show()
-
+                SnackbarHelper.show(webView, "Connecting to server... Attempt $attempt of $maxAttempts")
                 delay(5_000)
                 loadWebViewWithRetry(url, attempt + 1, maxAttempts)
             } else {
-                Toast.makeText(
-                    this@ScreenSaverService,
-                    "Could not connect to server after $maxAttempts attempts",
-                    Toast.LENGTH_LONG
-                ).show()
-
+                SnackbarHelper.show(webView, "Could not connect to server after $maxAttempts attempts")
                 webView.loadUrl(url)
             }
         }

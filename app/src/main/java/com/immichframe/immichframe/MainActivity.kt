@@ -36,22 +36,22 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.graphics.drawable.toDrawable
+import androidx.core.graphics.toColorInt
+import androidx.core.net.toUri
+import androidx.core.view.isVisible
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import retrofit2.Retrofit
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import kotlinx.coroutines.*
-import androidx.lifecycle.lifecycleScope
-import androidx.core.graphics.toColorInt
-import androidx.core.graphics.drawable.toDrawable
-import androidx.core.net.toUri
-import androidx.core.view.isVisible
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import retrofit2.Retrofit
 
 class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
@@ -192,7 +192,7 @@ class MainActivity : AppCompatActivity() {
             settingsLauncher.launch(intent)
         } else {
             loadSettings()
-            UpdateHelper.checkForUpdate(this, showNoUpdateToast = true)
+            UpdateHelper.checkForUpdate(findViewById(android.R.id.content), showNoUpdateMsg = true)
         }
     }
 
@@ -489,11 +489,10 @@ class MainActivity : AppCompatActivity() {
                     }
                     if (retryCount < maxRetries) {
                         retryCount++
-                        Toast.makeText(
-                            this@MainActivity,
-                            "Retrying to fetch server settings... Attempt $retryCount of $maxRetries",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        SnackbarHelper.show(
+                            findViewById(android.R.id.content),
+                            "Retrying to fetch server settings... Attempt $retryCount of $maxRetries"
+                        )
                         Handler(Looper.getMainLooper()).postDelayed({
                             attemptFetch()
                         }, retryDelayMillis)
@@ -840,11 +839,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             // display message to user that screen is going to sleep
-            Toast.makeText(
-                this@MainActivity,
-                "Going to sleep",
-                Toast.LENGTH_LONG
-            ).show()
+            SnackbarHelper.show(findViewById(android.R.id.content), "Going to sleep")
         }
     }
 
@@ -989,21 +984,11 @@ class MainActivity : AppCompatActivity() {
             if (reachable) {
                 webView.loadUrl(url)
             } else if (attempt <= maxAttempts) {
-                Toast.makeText(
-                    this@MainActivity,
-                    "Connecting to server... Attempt $attempt of $maxAttempts",
-                    Toast.LENGTH_SHORT
-                ).show()
-
+                SnackbarHelper.show(webView, "Connecting to server... Attempt $attempt of $maxAttempts")
                 delay(5_000)
                 loadWebViewWithRetry(url, attempt + 1, maxAttempts)
             } else {
-                Toast.makeText(
-                    this@MainActivity,
-                    "Could not connect to server after $maxAttempts attempts",
-                    Toast.LENGTH_LONG
-                ).show()
-
+                SnackbarHelper.show(webView, "Could not connect to server after $maxAttempts attempts")
                 webView.loadUrl(url)
             }
         }

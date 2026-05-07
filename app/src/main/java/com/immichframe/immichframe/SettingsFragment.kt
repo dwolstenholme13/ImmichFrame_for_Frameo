@@ -8,7 +8,6 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.text.InputType
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.preference.EditTextPreference
 import androidx.preference.Preference
@@ -87,7 +86,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 txtScreenTimeout?.summary = "Screen turns off after $newValue minutes"
                 true
             } else {
-                Toast.makeText(requireContext(), "Please enter a value between 1 and 1440 minutes (24 hours)", Toast.LENGTH_SHORT).show()
+                SnackbarHelper.show(requireView(), "Please enter a value between 1 and 1440 minutes (24 hours)")
                 false
             }
         }
@@ -127,7 +126,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 .getString("webview_url", "")?.trim()
             val urlPattern = Regex("^https?://.+")
             return@setOnPreferenceClickListener if (url.isNullOrEmpty()|| !url.matches(urlPattern)) {
-                Toast.makeText(requireContext(), "Please enter a valid server URL.", Toast.LENGTH_LONG).show()
+                SnackbarHelper.show(requireView(), "Please enter a valid server URL.")
                 false
             } else {
                 activity?.setResult(Activity.RESULT_OK)
@@ -141,9 +140,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
         btnAndroidSettings?.setOnPreferenceClickListener {
             val context = requireContext()
 
-            // Only show Toast + auto-return on Android 9 and below
+            // Only show message + auto-return on Android 9 and below
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-                Toast.makeText(context, "Returning to app in 2 minutes…", Toast.LENGTH_LONG).show()
+                SnackbarHelper.show(requireView(), "Returning to app in 2 minutes…")
 
                 // Schedule return after 2 minutes
                 Handler(Looper.getMainLooper()).postDelayed({
@@ -169,7 +168,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
         btnUpdate?.summary = "Check for a new app version (Current: $currentVersion)"
         btnUpdate?.setOnPreferenceClickListener {
-            UpdateHelper.checkForUpdate(requireContext())
+            UpdateHelper.checkForUpdate(requireView())
             true
         }
 
@@ -195,7 +194,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 updateDimSummary()
                 true // Accept new value
             } else {
-                Toast.makeText(requireContext(), "Invalid time format. Use HH:mm-HH:mm.", Toast.LENGTH_LONG).show()
+                SnackbarHelper.show(requireView(), "Invalid time format. Use HH:mm-HH:mm.")
                 false // Reject value change
             }
         }
