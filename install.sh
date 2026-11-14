@@ -263,4 +263,8 @@ adb -s "$serial" shell appops set com.immichframe.immichframe REQUEST_INSTALL_PA
 # enable writing settings so that backlight can be turned off by setting short timeout value
 adb -s "$serial" shell appops set com.immichframe.immichframe WRITE_SETTINGS allow
 
+# grant location permission so the app can display the connected Wi-Fi SSID
+adb -s "$serial" shell pm grant com.immichframe.immichframe android.permission.ACCESS_FINE_LOCATION
+adb -s "$serial" shell pm grant com.immichframe.immichframe android.permission.ACCESS_COARSE_LOCATION
+
 echo "Successfully installed ImmichFrame for Frameo app on device with Android ${version}, build ID ${buildid}, webview version ${webview_version}"

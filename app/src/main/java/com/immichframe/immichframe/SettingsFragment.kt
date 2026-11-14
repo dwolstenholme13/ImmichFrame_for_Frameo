@@ -1,14 +1,23 @@
 package com.immichframe.immichframe
 
+import android.Manifest
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.net.wifi.WifiInfo
+import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.text.InputType
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
@@ -18,6 +27,13 @@ import androidx.preference.SeekBarPreference
 import androidx.preference.SwitchPreferenceCompat
 
 class SettingsFragment : PreferenceFragmentCompat() {
+    private val locationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) {
+        updateWifiSummary()
+        launchWifiSettings()
+    }
+
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.settings_view, rootKey)
         val chkUseWebView = findPreference<SwitchPreferenceCompat>("useWebView")
@@ -164,6 +180,29 @@ class SettingsFragment : PreferenceFragmentCompat() {
             }
         }
 
+        // launch Wi-Fi settings panel (Android 10+) or standard Wi-Fi settings fallback
+        val btnWifiSettings = findPreference<Preference>("wifiSettings")
+        btnWifiSettings?.setOnPreferenceClickListener {
+            val context = context ?: return@setOnPreferenceClickListener true
+            val hasLocation = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (hasLocation) {
+                launchWifiSettings()
+            } else {
+                locationPermissionLauncher.launch(
+                    arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    )
+                )
+            }
+            true
+        }
+        updateWifiSummary()
+
         // launch Android settings selection
         val btnAndroidSettings = findPreference<Preference>("androidSettings")
         btnAndroidSettings?.setOnPreferenceClickListener {
@@ -239,5 +278,83 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         val txtDimTime = findPreference<EditTextPreference>("dimTimeRange")
         txtDimTime?.summary = String.format("Current: %02d:%02d - %02d:%02d", startHour, startMinute, endHour, endMinute)
+    }
+
+    // make sure the WiFi summary is updated when user returns from WiFi settings panel
+    override fun onResume() {
+        super.onResume()
+        updateWifiSummary()
+    }
+
+    // launch the WiFi settings panel
+    private fun launchWifiSettings() {
+        val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            Intent(Settings.Panel.ACTION_WIFI)
+        } else {
+            Intent(Settings.ACTION_WIFI_SETTINGS)
+        }
+        try {
+            startActivity(intent)
+        } catch (_: Exception) {
+            // Fallback to standard Wi-Fi settings if panel is unavailable
+            startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))
+        }
+    }
+
+    // update the summmary line for WiFi in the settings menu to show the connected network if any
+    private fun updateWifiSummary() {
+        val pref = findPreference<Preference>("wifiSettings") ?: return
+        val context = context ?: return
+
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+        if (cm == null) {
+            pref.summary = "Not connected"
+            return
+        }
+
+        val network = cm.activeNetwork
+        if (network == null) {
+            pref.summary = "Not connected"
+            return
+        }
+
+        val caps = cm.getNetworkCapabilities(network)
+        if (caps == null) {
+            pref.summary = "Not connected"
+            return
+        }
+
+        if (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+            val hasLocation = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+
+            var ssid: String? = null
+            if (hasLocation) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    val wifiInfo = caps.transportInfo as? WifiInfo
+                    ssid = wifiInfo?.ssid
+                }
+
+                if (ssid.isNullOrBlank() || ssid == "<unknown ssid>") {
+                    @Suppress("DEPRECATION")
+                    val wm = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
+                    @Suppress("DEPRECATION")
+                    ssid = wm?.connectionInfo?.ssid
+                }
+            }
+
+            val cleanSsid = ssid?.removeSurrounding("\"")
+            if (!cleanSsid.isNullOrBlank() && cleanSsid != "<unknown ssid>") {
+                pref.summary = "Currently connected to $cleanSsid"
+            } else {
+                pref.summary = "Connected to Wi‑Fi"
+            }
+        } else if (caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
+            pref.summary = "Connected via Ethernet"
+        } else {
+            pref.summary = "Not connected"
+        }
     }
 }
