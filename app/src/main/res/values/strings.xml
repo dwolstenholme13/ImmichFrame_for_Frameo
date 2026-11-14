@@ -2,6 +2,4 @@
     <string name="app_name">ImmichFrame for Frameo</string>
     <string name="github_owner">dwolstenholme13</string>
     <string name="github_repo">ImmichFrame_for_Frameo</string>
-    <string name="settings_text">Settings</string>
-    <string name="quit_text">Quit</string>
 </resources>
