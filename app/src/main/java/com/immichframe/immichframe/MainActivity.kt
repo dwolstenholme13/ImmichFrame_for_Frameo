@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.net.http.SslError
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -24,6 +25,9 @@ import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.view.WindowManager
+import android.webkit.ConsoleMessage
+import android.webkit.SslErrorHandler
+import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -558,14 +562,17 @@ class MainActivity : AppCompatActivity() {
                     view: WebView?,
                     request: WebResourceRequest?
                 ): Boolean {
-                    val url = request?.url
-                    if (url != null) {
-                        // Open the URL in the default browser
-                        val intent = Intent(Intent.ACTION_VIEW, url)
-                        startActivity(intent)
-                        return true
-                    }
-                    return false
+                    return false  // so WebView handles redirects internally
+                }
+
+                // bypass and log SSL certificate validation errors
+                override fun onReceivedSslError(
+                    view: WebView?,
+                    handler: SslErrorHandler?,
+                    error: SslError?
+                ) {
+                    Log.e("ImmichFrame", "SSL Error bypassed: $error")
+                    handler?.proceed()  // tells WebView to accept the cert and load the page
                 }
 
                 override fun onReceivedError(
@@ -583,28 +590,45 @@ class MainActivity : AppCompatActivity() {
                             val errorDescription = error.description.toString().replace("'", "\\'")
                             view?.evaluateJavascript("showError('$errorCode', '$errorDescription')", null)
                         }, 500)
+
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            // check url again in case the user has changed it
+                            var currentUrl = prefs.getString("webview_url", "")?.trim() ?: ""
+                            currentUrl = if (authSecret.isNotEmpty()) {
+                                currentUrl.toUri()
+                                    .buildUpon()
+                                    .appendQueryParameter("authsecret", authSecret)
+                                    .build()
+                                    .toString()
+                            } else {
+                                currentUrl
+                            }
+                            if (currentUrl.isNotEmpty()) {
+                                webView.loadUrl(currentUrl)
+                            }
+                        }, 5000)
                     }
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        //check url again in case the user has changed it
-                        var currentUrl = prefs.getString("webview_url", "")?.trim() ?: ""
-                        currentUrl = if (authSecret.isNotEmpty()) {
-                            savedUrl.toUri()
-                                .buildUpon()
-                                .appendQueryParameter("authsecret", authSecret)
-                                .build()
-                                .toString()
-                        } else {
-                            currentUrl
-                        }
-                        if (currentUrl.isNotEmpty()) {
-                            webView.loadUrl(currentUrl)
-                        }
-                    }, 5000)
                 }
             }
+
+
+            // capture all JavaScript console.log / console.error in logcat
+            webView.webChromeClient = object : WebChromeClient() {
+                override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
+                    Log.d("ImmichFrameJS", "${consoleMessage?.message()} [${consoleMessage?.sourceId()}:${consoleMessage?.lineNumber()}]")
+                    return true
+                }
+            }
+
+            // WebSettings permissions
             webView.settings.javaScriptEnabled = true
-            webView.settings.cacheMode = WebSettings.LOAD_NO_CACHE
+            webView.settings.cacheMode = WebSettings.LOAD_DEFAULT
             webView.settings.domStorageEnabled = true
+            webView.settings.databaseEnabled = true
+            webView.settings.mediaPlaybackRequiresUserGesture = false
+            webView.settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+            WebView.setWebContentsDebuggingEnabled(true)
+
             loadWebViewWithRetry(savedUrl)
         } else {
             retrofit = Helpers.createRetrofit(savedUrl, authSecret)
