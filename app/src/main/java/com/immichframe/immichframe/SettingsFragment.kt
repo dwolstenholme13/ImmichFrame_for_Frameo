@@ -24,7 +24,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val chkBlurredBackground = findPreference<SwitchPreferenceCompat>("blurredBackground")
         val chkShowCurrentDate = findPreference<SwitchPreferenceCompat>("showCurrentDate")
         val chkKeepScreenOn = findPreference<SwitchPreferenceCompat>("keepScreenOn")
-        val txtScreenTimeout = findPreference<EditTextPreference>("screenTimeout")
+        val screenTimeoutPref = findPreference<EditTextPreference>("screenTimeout")
         val screenDimmingCategory = findPreference<PreferenceCategory>("screenDimmingCategory")
         val chkScreenDimming = findPreference<SwitchPreferenceCompat>("screenDimming")
         val txtDimTime = findPreference<EditTextPreference>("dimTimeRange")
@@ -36,16 +36,29 @@ class SettingsFragment : PreferenceFragmentCompat() {
             editText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
         }
 
-        // Update visibility based on switches
+        // ensure screen timeout uses a number keypad
+        screenTimeoutPref?.setOnBindEditTextListener { editText ->
+            editText.inputType = InputType.TYPE_CLASS_NUMBER
+        }
+
+        // set URI input type and disable suggestions/auto-correct for the server URL
+        val urlPref = findPreference<EditTextPreference>("webview_url")
+        urlPref?.setOnBindEditTextListener { editText ->
+            editText.inputType = InputType.TYPE_CLASS_TEXT or 
+                                 InputType.TYPE_TEXT_VARIATION_URI or 
+                                 InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+        }
+
+        // update visibility based on switches
         val useWebView = chkUseWebView?.isChecked ?: false
         chkBlurredBackground?.isVisible = !useWebView
         chkShowCurrentDate?.isVisible = !useWebView
         
         val keepScreenOn = chkKeepScreenOn?.isChecked ?: false
         screenDimmingCategory?.isVisible = keepScreenOn
-        txtScreenTimeout?.isVisible = !keepScreenOn
+        screenTimeoutPref?.isVisible = !keepScreenOn
         if (!keepScreenOn) {
-            txtScreenTimeout?.summary = "Screen turns off after ${txtScreenTimeout?.text ?: "10"} minutes"
+            screenTimeoutPref?.summary = "Screen turns off after ${screenTimeoutPref?.text ?: "10"} minutes"
             chkScreenDimming?.isChecked = false
             txtDimTime?.isVisible = false
         }
@@ -87,7 +100,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         chkKeepScreenOn?.setOnPreferenceChangeListener { _, newValue ->
             val value = newValue as Boolean
             screenDimmingCategory?.isVisible = value
-            txtScreenTimeout?.isVisible = !value
+            screenTimeoutPref?.isVisible = !value
             if (!value) {
                 chkScreenDimming?.isChecked = false
                 txtDimTime?.isVisible = false
@@ -96,10 +109,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
 
         // validate screen-on timeout value and update summary line
-        txtScreenTimeout?.setOnPreferenceChangeListener { _, newValue ->
+        screenTimeoutPref?.setOnPreferenceChangeListener { _, newValue ->
             val value = newValue.toString().toIntOrNull()
             if (value != null && value in 1..1440) {
-                txtScreenTimeout?.summary = "Screen turns off after $newValue minutes"
+                screenTimeoutPref?.summary = "Screen turns off after $newValue minutes"
                 true
             } else {
                 SnackbarHelper.show(requireView(), "Please enter a value between 1 and 1440 minutes (24 hours)")
