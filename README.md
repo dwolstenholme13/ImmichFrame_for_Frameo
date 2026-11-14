@@ -45,12 +45,15 @@ The documentation for ImmichFrame is [here](https://immichframe.dev/docs/overvie
 instructions for both the server component and the [Frameo
 client](https://immichframe.dev/docs/getting-started/apps#frameo).
 
-For loading this app on Frameo devices, I prefer using the [Frameo installation instructions from
-ImmichKiosk](https://docs.immichkiosk.app/misc/frameo/). This project uses the ImmichFrame Android
-app to connect to an ImmichKiosk backend, but the installation is the same whether you're using
-ImmichFrame or ImmichKiosk on your server.
+For loading this app on Frameo devices, I've created a bash script: just run `install.sh`, with the
+APK file as its argument, and it will install the application and set the appropriate permissions,
+disable the Frameo app, and set this app to start on bootup.
 
-Be sure to also enable the following permissions using ADB:
+If you prefer the manual method or the install script doesn't work, please see the [Frameo
+installation instructions from ImmichKiosk](https://docs.immichkiosk.app/misc/frameo/). This project
+uses the ImmichFrame Android app to connect to an ImmichKiosk backend, but the installation is the
+same whether you're using ImmichFrame or ImmichKiosk on your server. Be sure to also enable the
+following permissions using ADB:
 `adb shell appops set com.immichframe.immichframe REQUEST_INSTALL_PACKAGES allow`
 `adb shell appops set com.immichframe.immichframe WRITE_SETTINGS allow`
 
@@ -61,10 +64,11 @@ Be sure to also enable the following permissions using ADB:
 - Screen keep-on is optional; if turned off, a setting is available in menu to set timeout
 - App has update function in settings menu, to easily update to latest release from GitHub
 - Settings menu shows current values for screen timeout, dimming time hours, and current app version
+- Settings menu shows current WiFi connection and can bring up WiFi settings panel
+- Settings menu has brightness slider
 
 ## Tested devices
 - moonka ZN-DP1101 (build ID SSA_ZN-DP1101-20251205, webView v101.0.4951.61)
-- moonka ZN-DP1101 (build ID SSA_ZN-DP1101-20251205, webView v106.0.5249.126)
 
 ## Development
 - [Android Studio](https://developer.android.com/studio/) 
