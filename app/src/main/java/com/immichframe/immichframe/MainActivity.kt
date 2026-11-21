@@ -125,6 +125,7 @@ class MainActivity : AppCompatActivity() {
             if (result.resultCode == RESULT_OK) {
                 isSnoozing = false
                 handler.removeCallbacks(redimRunnable)
+                webView.clearCache(true)  // clear cache in case something in there is causing a problem
                 loadSettings()
             }
         }
