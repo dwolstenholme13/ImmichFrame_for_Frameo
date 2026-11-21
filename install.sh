@@ -267,4 +267,8 @@ adb -s "$serial" shell appops set com.immichframe.immichframe WRITE_SETTINGS all
 adb -s "$serial" shell pm grant com.immichframe.immichframe android.permission.ACCESS_FINE_LOCATION
 adb -s "$serial" shell pm grant com.immichframe.immichframe android.permission.ACCESS_COARSE_LOCATION
 
+# grant permission and policy to allow changing system language from app
+adb -s "$serial" shell pm grant com.immichframe.immichframe android.permission.CHANGE_CONFIGURATION
+adb -s "$serial" shell settings put global hidden_api_policy 1
+
 echo "Successfully installed ImmichFrame for Frameo app on device with Android ${version}, build ID ${buildid}, webview version ${webview_version}"

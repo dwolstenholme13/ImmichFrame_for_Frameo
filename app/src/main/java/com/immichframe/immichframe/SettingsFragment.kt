@@ -15,6 +15,7 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.text.InputType
+import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
@@ -223,6 +224,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 LocaleListCompat.forLanguageTags(newTag)
             }
             AppCompatDelegate.setApplicationLocales(locales)
+            updateSystemLocale(newTag)
             true
         }
 
@@ -378,6 +380,73 @@ class SettingsFragment : PreferenceFragmentCompat() {
             pref.summary = getString(R.string.wifi_status_connected_ethernet)
         } else {
             pref.summary = getString(R.string.wifi_status_not_connected)
+        }
+    }
+
+    // attempt to set the Android system-wide locale
+    private fun updateSystemLocale(tag: String) {
+        if (tag == "default" || tag.isEmpty()) {
+            return
+        }
+        try {
+            val targetLocale = when (tag.lowercase(Locale.ROOT)) {
+                "ja" -> Locale.JAPAN
+                "en" -> Locale.US
+                else -> Locale.forLanguageTag(tag)
+            }
+
+            // try com.android.internal.app.LocalePicker.updateLocales(LocaleList)
+            try {
+                val localePickerClass = Class.forName("com.android.internal.app.LocalePicker")
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    val updateLocalesMethod = localePickerClass.getMethod("updateLocales", android.os.LocaleList::class.java)
+                    updateLocalesMethod.invoke(null, android.os.LocaleList(targetLocale))
+                    Log.d("ImmichFrame", "System locale updated via LocalePicker to $targetLocale")
+                    return
+                } else {
+                    val updateLocaleMethod = localePickerClass.getMethod("updateLocale", Locale::class.java)
+                    updateLocaleMethod.invoke(null, targetLocale)
+                    Log.d("ImmichFrame", "System locale updated via LocalePicker to $targetLocale")
+                    return
+                }
+            } catch (e: Exception) {
+                Log.w("ImmichFrame", "LocalePicker.updateLocales failed, trying ActivityManager: ${e.message}")
+            }
+
+            // fallback: try ActivityManager / IActivityManager.updatePersistentConfiguration
+            val amClass = Class.forName("android.app.ActivityManager")
+            val getServiceMethod = try {
+                amClass.getMethod("getService")
+            } catch (_: NoSuchMethodException) {
+                val amNativeClass = Class.forName("android.app.ActivityManagerNative")
+                amNativeClass.getMethod("getDefault")
+            }
+            val amInstance = getServiceMethod.invoke(null)
+            val iamClass = amInstance.javaClass
+            val getConfigurationMethod = iamClass.getMethod("getConfiguration")
+            val config = getConfigurationMethod.invoke(amInstance) as android.content.res.Configuration
+
+            try {
+                val userSetLocaleField = config.javaClass.getField("userSetLocale")
+                userSetLocaleField.setBoolean(config, true)
+            } catch (_: Exception) {}
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                config.setLocales(android.os.LocaleList(targetLocale))
+            } else {
+                @Suppress("DEPRECATION")
+                config.locale = targetLocale
+            }
+
+            val updateConfigMethod = try {
+                iamClass.getMethod("updatePersistentConfiguration", android.content.res.Configuration::class.java)
+            } catch (_: NoSuchMethodException) {
+                iamClass.getMethod("updateConfiguration", android.content.res.Configuration::class.java)
+            }
+            updateConfigMethod.invoke(amInstance, config)
+            Log.d("ImmichFrame", "System configuration updated via ActivityManager to $targetLocale")
+        } catch (t: Throwable) {
+            Log.w("ImmichFrame", "Failed to update system locale: ${t.message}")
         }
     }
 }
