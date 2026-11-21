@@ -158,21 +158,21 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnPrevious.setOnClickListener {
-            val toast = Toast.makeText(this, "Previous", Toast.LENGTH_SHORT)
+            val toast = Toast.makeText(this, getString(R.string.toast_previous), Toast.LENGTH_SHORT)
             toast.setGravity(Gravity.CENTER_VERTICAL or Gravity.START, 0, 0)
             toast.show()
             previousAction()
         }
 
         btnPause.setOnClickListener {
-            val toast = Toast.makeText(this, "Pause", Toast.LENGTH_SHORT)
+            val toast = Toast.makeText(this, getString(R.string.toast_pause), Toast.LENGTH_SHORT)
             toast.setGravity(Gravity.CENTER, 0, 0)
             toast.show()
             pauseAction()
         }
 
         btnNext.setOnClickListener {
-            val toast = Toast.makeText(this, "Next", Toast.LENGTH_SHORT)
+            val toast = Toast.makeText(this, getString(R.string.toast_next), Toast.LENGTH_SHORT)
             toast.setGravity(Gravity.CENTER_VERTICAL or Gravity.END, 0, 0)
             toast.show()
             nextAction()
@@ -381,7 +381,7 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     Toast.makeText(
                         this@MainActivity,
-                        "Failed to load image (HTTP ${response.code()})",
+                        getString(R.string.msg_failed_load_image_http, response.code()),
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -391,7 +391,7 @@ class MainActivity : AppCompatActivity() {
                 t.printStackTrace()
                 Toast.makeText(
                     this@MainActivity,
-                    "Failed to load image: ${t.localizedMessage}",
+                    getString(R.string.msg_failed_load_image, t.localizedMessage ?: ""),
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -495,7 +495,7 @@ class MainActivity : AppCompatActivity() {
                         retryCount++
                         SnackbarHelper.show(
                             findViewById(android.R.id.content),
-                            "Retrying to fetch server settings... Attempt $retryCount of $maxRetries"
+                            getString(R.string.msg_retry_fetch_settings, retryCount, maxRetries)
                         )
                         Handler(Looper.getMainLooper()).postDelayed({
                             attemptFetch()
@@ -641,7 +641,7 @@ class MainActivity : AppCompatActivity() {
                 onFailure = { error ->
                     Toast.makeText(
                         this,
-                        "Failed to load server settings: ${error.localizedMessage}",
+                        getString(R.string.msg_failed_load_settings, error.localizedMessage ?: ""),
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -863,7 +863,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             // display message to user that screen is going to sleep
-            SnackbarHelper.show(findViewById(android.R.id.content), "Going to sleep")
+            SnackbarHelper.show(findViewById(android.R.id.content), getString(R.string.msg_going_to_sleep))
         }
     }
 
@@ -1008,11 +1008,11 @@ class MainActivity : AppCompatActivity() {
             if (reachable) {
                 webView.loadUrl(url)
             } else if (attempt <= maxAttempts) {
-                SnackbarHelper.show(webView, "Connecting to server... Attempt $attempt of $maxAttempts")
+                SnackbarHelper.show(webView, getString(R.string.msg_connecting_to_server, attempt, maxAttempts))
                 delay(5_000)
                 loadWebViewWithRetry(url, attempt + 1, maxAttempts)
             } else {
-                SnackbarHelper.show(webView, "Could not connect to server after $maxAttempts attempts")
+                SnackbarHelper.show(webView, getString(R.string.msg_could_not_connect, maxAttempts))
                 webView.loadUrl(url)
             }
         }

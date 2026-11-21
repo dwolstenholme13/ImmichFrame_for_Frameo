@@ -2,4 +2,90 @@
     <string name="app_name">ImmichFrame for Frameo</string>
     <string name="github_owner">dwolstenholme13</string>
     <string name="github_repo">ImmichFrame_for_Frameo</string>
+
+    <!-- Language -->
+    <string name="language_system_default">System Default</string>
+    <string name="pref_language_title">Language</string>
+
+    <!-- Settings Categories -->
+    <string name="pref_category_connection">Connection Settings</string>
+    <string name="pref_category_display">Display Options</string>
+    <string name="pref_category_screen_dimming">Screen Dimming</string>
+    <string name="pref_category_other">Other</string>
+    <string name="pref_category_interactions">Interactions</string>
+
+    <!-- Connection Preferences -->
+    <string name="pref_wifi_settings_title">Wi‑Fi Settings</string>
+    <string name="pref_wifi_settings_summary">Connect to a Wi‑Fi network</string>
+    <string name="pref_server_url_title">ImmichFrame Server URL</string>
+    <string name="pref_auth_secret_title">Authorization Secret</string>
+
+    <!-- Display Preferences -->
+    <string name="pref_screen_brightness_title">Screen Brightness</string>
+    <string name="pref_use_webview_title">Use WebView</string>
+    <string name="pref_keep_screen_on_title">Keep Screen On</string>
+    <string name="pref_screen_timeout_title">Screen Timeout</string>
+    <string name="pref_screen_timeout_summary">Minutes before screen turns off</string>
+    <string name="pref_blurred_background_title">Blurred Background</string>
+    <string name="pref_show_current_date_title">Show Current Date</string>
+    <string name="pref_settings_lock_title">Lock access to settings</string>
+
+    <!-- Screen Dimming Preferences -->
+    <string name="pref_screen_dimming_title">Set Screen Dimming Hours</string>
+    <string name="pref_dim_time_range_title">Dimming Time Range (e.g. 22:00-07:00)</string>
+    <string name="pref_dim_time_range_summary">e.g. 22:00-07:00</string>
+
+    <!-- Other Preferences -->
+    <string name="pref_check_for_updates_title">Check for Updates</string>
+    <string name="pref_check_for_updates_summary">Check for a new app version</string>
+    <string name="pref_android_settings_title">Launch Android Settings</string>
+    <string name="pref_close_settings_title">Close Settings</string>
+
+    <!-- Interactions -->
+    <string name="pref_interactions_summary">⬆️ Open Settings\n🆗 Play/Pause\n⬅️ Previous Image\n➡️ Next Image\n👇 Open Settings (swipe)</string>
+
+    <!-- Dynamic Settings Messages -->
+    <string name="pref_screen_timeout_summary_format">Screen turns off after %s minutes</string>
+    <string name="msg_invalid_screen_timeout">Please enter a value between 1 and 1440 minutes (24 hours)</string>
+    <string name="dialog_confirm_title">Confirm Action</string>
+    <string name="dialog_settings_lock_message">This will disable access to the settings screen, the only way back is via RPC commands (or uninstall/reinstall).\nAre you absolutely sure?</string>
+    <string name="action_yes">Yes</string>
+    <string name="action_no">No</string>
+    <string name="msg_invalid_server_url">Please enter a valid server URL.</string>
+    <string name="msg_returning_to_app">Returning to app in 2 minutes…</string>
+    <string name="pref_check_updates_with_version">Check for a new app version (Current: %s)</string>
+    <string name="pref_dim_current_format">Current: %02d:%02d - %02d:%02d</string>
+    <string name="msg_invalid_time_format">Invalid time format. Use HH:mm-HH:mm.</string>
+
+    <!-- Wi-Fi Statuses -->
+    <string name="wifi_status_not_connected">Not connected</string>
+    <string name="wifi_status_connected_wifi">Connected to Wi‑Fi</string>
+    <string name="wifi_status_connected_to_ssid">Currently connected to %s</string>
+    <string name="wifi_status_connected_ethernet">Connected via Ethernet</string>
+
+    <!-- Main Activity Messages -->
+    <string name="toast_previous">Previous</string>
+    <string name="toast_pause">Pause</string>
+    <string name="toast_next">Next</string>
+    <string name="msg_failed_load_image_http">Failed to load image (HTTP %d)</string>
+    <string name="msg_failed_load_image">Failed to load image: %s</string>
+    <string name="msg_retry_fetch_settings">Retrying to fetch server settings... Attempt %1$d of %2$d</string>
+    <string name="msg_failed_load_settings">Failed to load server settings: %s</string>
+    <string name="msg_going_to_sleep">Going to sleep</string>
+    <string name="msg_connecting_to_server">Connecting to server... Attempt %1$d of %2$d</string>
+    <string name="msg_could_not_connect">Could not connect to server after %d attempts</string>
+
+    <!-- Update Helper Messages -->
+    <string name="msg_latest_version">You are on the latest version</string>
+    <string name="msg_failed_check_updates">Failed to check for updates</string>
+    <string name="msg_error_check_updates">Error checking for updates</string>
+    <string name="dialog_update_available_title">Update Available</string>
+    <string name="dialog_update_available_message">Version %1$s is available. Do you want to download and install it?\n\nRelease notes:\n%2$s</string>
+    <string name="action_download">Download</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="notification_update_title">%s Update</string>
+    <string name="notification_update_description">Downloading version %s</string>
+    <string name="dialog_downloading_update_title">Downloading Update</string>
+    <string name="msg_download_failed">Download failed</string>
+    <string name="msg_apk_not_found">Cannot find downloaded APK file: %s</string>
 </resources>

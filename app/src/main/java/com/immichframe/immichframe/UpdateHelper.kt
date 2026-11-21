@@ -15,6 +15,7 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import java.io.File
 import retrofit2.Call
@@ -67,17 +68,17 @@ object UpdateHelper {
                         if (isNewerVersion(context, release.tag_name)) {
                             showUpdateDialog(anchorView, release)
                         } else if (showNoUpdateMsg) {
-                            SnackbarHelper.show(anchorView, "You are on the latest version")
+                            SnackbarHelper.show(anchorView, context.getString(R.string.msg_latest_version))
                         }
                     }
                 } else if (showNoUpdateMsg) {
-                    SnackbarHelper.show(anchorView, "Failed to check for updates")
+                    SnackbarHelper.show(anchorView, context.getString(R.string.msg_failed_check_updates))
                 }
             }
 
             override fun onFailure(call: Call<GitHubRelease>, t: Throwable) {
                 if (showNoUpdateMsg) {
-                    SnackbarHelper.show(anchorView, "Error checking for updates")
+                    SnackbarHelper.show(anchorView, context.getString(R.string.msg_error_check_updates))
                 }
             }
         })
@@ -90,7 +91,7 @@ object UpdateHelper {
         val currentVersion = try {
             val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
             pInfo.versionName ?: "0.0.0.0"
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             "0.0.0.0"
         }
 
@@ -115,13 +116,14 @@ object UpdateHelper {
 
     // show update dialog to user and get yes/no input
     private fun showUpdateDialog(anchorView: View, release: GitHubRelease) {
-        AlertDialog.Builder(anchorView.context)
-            .setTitle("Update Available")
-            .setMessage("Version ${release.tag_name} is available. Do you want to download and install it?\n\nRelease notes:\n${release.body}")
-            .setPositiveButton("Download") { _, _ ->
+        val context = anchorView.context
+        AlertDialog.Builder(context)
+            .setTitle(R.string.dialog_update_available_title)
+            .setMessage(context.getString(R.string.dialog_update_available_message, release.tag_name, release.body))
+            .setPositiveButton(R.string.action_download) { _, _ ->
                 downloadAndInstall(anchorView, release)
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(R.string.action_cancel, null)
             .show()
     }
 
@@ -138,8 +140,8 @@ object UpdateHelper {
         }
 
         val request = DownloadManager.Request(Uri.parse(url))
-            .setTitle("${context.getString(R.string.app_name)} Update")
-            .setDescription("Downloading version ${release.tag_name}")
+            .setTitle(context.getString(R.string.notification_update_title, context.getString(R.string.app_name)))
+            .setDescription(context.getString(R.string.notification_update_description, release.tag_name))
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             .setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, "${context.getString(R.string.github_repo)}.${release.tag_name}.apk")
 
@@ -164,10 +166,10 @@ object UpdateHelper {
         layout.addView(progressText)
 
         val progressDialog = AlertDialog.Builder(context)
-            .setTitle("Downloading Update")
+            .setTitle(R.string.dialog_downloading_update_title)
             .setView(layout)
             .setCancelable(false)
-            .setNegativeButton("Cancel") { _, _ ->
+            .setNegativeButton(R.string.action_cancel) { _, _ ->
                 manager.remove(downloadId)
             }
             .show()
@@ -217,7 +219,7 @@ object UpdateHelper {
                                 installApk(anchorView, file)
                             }
                         } else {
-                            SnackbarHelper.show(anchorView, "Download failed")
+                            SnackbarHelper.show(anchorView, context.getString(R.string.msg_download_failed))
                         }
                         cursor.close()
                     }
@@ -226,17 +228,17 @@ object UpdateHelper {
             }
         }
         val receiverFlags = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            Context.RECEIVER_EXPORTED
+            ContextCompat.RECEIVER_EXPORTED
         } else {
             0
         }
-        context.registerReceiver(onComplete, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), receiverFlags)
+        ContextCompat.registerReceiver(context, onComplete, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), receiverFlags)
     }
 
     // install APK file
     private fun installApk(anchorView: View, file: File) {
         if (!file.exists()) {
-            SnackbarHelper.show(anchorView, "Cannot find downloaded APK file: ${file.name}")
+            SnackbarHelper.show(anchorView, anchorView.context.getString(R.string.msg_apk_not_found, file.name))
             return
         }
 

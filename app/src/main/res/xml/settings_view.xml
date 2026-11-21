@@ -2,26 +2,26 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <PreferenceCategory android:title="Connection Settings">
+    <PreferenceCategory android:title="@string/pref_category_connection">
         <Preference
             android:key="wifiSettings"
-            android:title="Wi‑Fi Settings"
-            android:summary="Connect to a Wi‑Fi network" />
+            android:title="@string/pref_wifi_settings_title"
+            android:summary="@string/pref_wifi_settings_summary" />
         <EditTextPreference
             android:defaultValue=""
             android:inputType="textUri"
             android:key="webview_url"
-            android:title="ImmichFrame Server URL" />
+            android:title="@string/pref_server_url_title" />
         <EditTextPreference
             android:defaultValue=""
             android:key="authSecret"
-            android:title="Authorization Secret" />
+            android:title="@string/pref_auth_secret_title" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="Display Options">
+    <PreferenceCategory android:title="@string/pref_category_display">
         <SeekBarPreference
             android:key="manualBrightness"
-            android:title="Screen Brightness"
+            android:title="@string/pref_screen_brightness_title"
             android:defaultValue="100"
             android:max="100"
             app:min="1"
@@ -29,66 +29,73 @@
         <SwitchPreferenceCompat
             android:defaultValue="true"
             android:key="useWebView"
-            android:title="Use WebView" />
+            android:title="@string/pref_use_webview_title" />
         <SwitchPreferenceCompat
             android:defaultValue="true"
             android:key="keepScreenOn"
-            android:title="Keep Screen On" />
+            android:title="@string/pref_keep_screen_on_title" />
         <EditTextPreference
             android:defaultValue="10"
             android:inputType="number"
             android:key="screenTimeout"
-            android:summary="Minutes before screen turns off"
-            android:title="Screen Timeout" />
+            android:summary="@string/pref_screen_timeout_summary"
+            android:title="@string/pref_screen_timeout_title" />
         <SwitchPreferenceCompat
             android:defaultValue="false"
             android:key="blurredBackground"
-            android:title="Blurred Background" />
+            android:title="@string/pref_blurred_background_title" />
         <SwitchPreferenceCompat
             android:defaultValue="false"
             android:key="showCurrentDate"
-            android:title="Show Current Date" />
+            android:title="@string/pref_show_current_date_title" />
         <SwitchPreferenceCompat
             android:defaultValue="false"
             android:key="settingsLock"
-            android:title="Lock access to settings" />
+            android:title="@string/pref_settings_lock_title" />
     </PreferenceCategory>
 
     <PreferenceCategory
         android:key="screenDimmingCategory"
-        android:title="Screen Dimming">
+        android:title="@string/pref_category_screen_dimming">
         <SwitchPreferenceCompat
             android:defaultValue="false"
             android:key="screenDimming"
-            android:title="Set Screen Dimming Hours" />
+            android:title="@string/pref_screen_dimming_title" />
         <EditTextPreference
             android:defaultValue=""
             android:dependency="screenDimming"
             android:key="dimTimeRange"
-            android:summary="e.g. 22:00-07:00"
-            android:title="Dimming Time Range (e.g. 22:00-07:00)" />
+            android:summary="@string/pref_dim_time_range_summary"
+            android:title="@string/pref_dim_time_range_title" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="Other">
+    <PreferenceCategory android:title="@string/pref_category_other">
+        <ListPreference
+            android:defaultValue="default"
+            android:entries="@array/language_entries"
+            android:entryValues="@array/language_values"
+            android:key="appLanguage"
+            android:title="@string/pref_language_title"
+            app:useSimpleSummaryProvider="true" />
         <Preference
             android:key="checkForUpdates"
-            android:title="Check for Updates"
-            android:summary="Check for a new app version" />
+            android:title="@string/pref_check_for_updates_title"
+            android:summary="@string/pref_check_for_updates_summary" />
         <Preference
             android:defaultValue=""
             android:key="androidSettings"
-            android:title="Launch Android Settings" />
+            android:title="@string/pref_android_settings_title" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="Interactions">
+    <PreferenceCategory android:title="@string/pref_category_interactions">
         <Preference
             android:key="interactions"
             android:selectable="false"
-            android:summary="⬆️ Open Settings\n🆗 Play/Pause\n⬅️ Previous Image\n➡️ Next Image\n👇 Open Settings (swipe)" />
+            android:summary="@string/pref_interactions_summary" />
     </PreferenceCategory>
 
     <Preference
         android:icon="@android:drawable/ic_menu_close_clear_cancel"
         android:key="closeSettings"
-        android:title="Close Settings" />
+        android:title="@string/pref_close_settings_title" />
 </PreferenceScreen>

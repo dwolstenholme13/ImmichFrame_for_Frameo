@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ImmichFrame for Frameo</string>
+
+    <!-- Language -->
+    <string name="language_system_default">システム標準</string>
+    <string name="pref_language_title">言語</string>
+
+    <!-- Settings Categories -->
+    <string name="pref_category_connection">接続設定</string>
+    <string name="pref_category_display">表示設定</string>
+    <string name="pref_category_screen_dimming">画面の減光</string>
+    <string name="pref_category_other">その他</string>
+    <string name="pref_category_interactions">操作方法</string>
+
+    <!-- Connection Preferences -->
+    <string name="pref_wifi_settings_title">Wi‑Fi設定</string>
+    <string name="pref_wifi_settings_summary">Wi‑Fiネットワークに接続</string>
+    <string name="pref_server_url_title">ImmichFrameサーバーURL</string>
+    <string name="pref_auth_secret_title">認証シークレット</string>
+
+    <!-- Display Preferences -->
+    <string name="pref_screen_brightness_title">画面の明るさ</string>
+    <string name="pref_use_webview_title">WebViewを使用</string>
+    <string name="pref_keep_screen_on_title">画面を常にオン</string>
+    <string name="pref_screen_timeout_title">画面のタイムアウト</string>
+    <string name="pref_screen_timeout_summary">画面がオフになるまでの時間（分）</string>
+    <string name="pref_blurred_background_title">ぼかし背景</string>
+    <string name="pref_show_current_date_title">現在の日付を表示</string>
+    <string name="pref_settings_lock_title">設定へのアクセスをロック</string>
+
+    <!-- Screen Dimming Preferences -->
+    <string name="pref_screen_dimming_title">減光時間帯を設定</string>
+    <string name="pref_dim_time_range_title">減光時間帯 (例: 22:00-07:00)</string>
+    <string name="pref_dim_time_range_summary">例: 22:00-07:00</string>
+
+    <!-- Other Preferences -->
+    <string name="pref_check_for_updates_title">アップデートを確認</string>
+    <string name="pref_check_for_updates_summary">新しいバージョンを確認</string>
+    <string name="pref_android_settings_title">Android設定を開く</string>
+    <string name="pref_close_settings_title">設定を閉じる</string>
+
+    <!-- Interactions -->
+    <string name="pref_interactions_summary">⬆️ 設定を開く\n🆗 再生/一時停止\n⬅️ 前の画像\n➡️ 次の画像\n👇 設定を開く (スワイプ)</string>
+
+    <!-- Dynamic Settings Messages -->
+    <string name="pref_screen_timeout_summary_format">%s分後に画面がオフになります</string>
+    <string name="msg_invalid_screen_timeout">1〜1440分（24時間）の間の値を入力してください</string>
+    <string name="dialog_confirm_title">確認</string>
+    <string name="dialog_settings_lock_message">設定画面へのアクセスが無効になります。再度開くにはRPCコマンド（またはアンインストールと再インストール）が必要です。\n本当によろしいですか？</string>
+    <string name="action_yes">はい</string>
+    <string name="action_no">いいえ</string>
+    <string name="msg_invalid_server_url">有効なサーバーURLを入力してください。</string>
+    <string name="msg_returning_to_app">2分後にアプリに戻ります…</string>
+    <string name="pref_check_updates_with_version">新しいバージョンを確認 (現在: %s)</string>
+    <string name="pref_dim_current_format">現在: %02d:%02d - %02d:%02d</string>
+    <string name="msg_invalid_time_format">時間の形式が無効です。HH:mm-HH:mm で入力してください。</string>
+
+    <!-- Wi-Fi Statuses -->
+    <string name="wifi_status_not_connected">未接続</string>
+    <string name="wifi_status_connected_wifi">Wi‑Fiに接続中</string>
+    <string name="wifi_status_connected_to_ssid">%s に接続中</string>
+    <string name="wifi_status_connected_ethernet">イーサネットに接続中</string>
+
+    <!-- Main Activity Messages -->
+    <string name="toast_previous">前へ</string>
+    <string name="toast_pause">一時停止</string>
+    <string name="toast_next">次へ</string>
+    <string name="msg_failed_load_image_http">画像の読み込みに失敗しました (HTTP %d)</string>
+    <string name="msg_failed_load_image">画像の読み込みに失敗しました: %s</string>
+    <string name="msg_retry_fetch_settings">サーバー設定の取得を再試行中... (%1$d/%2$d回目)</string>
+    <string name="msg_failed_load_settings">サーバー設定の読み込みに失敗しました: %s</string>
+    <string name="msg_going_to_sleep">スリープモードに入ります</string>
+    <string name="msg_connecting_to_server">サーバーに接続中... (%1$d/%2$d回目)</string>
+    <string name="msg_could_not_connect">%d回試行後もサーバーに接続できませんでした</string>
+
+    <!-- Update Helper Messages -->
+    <string name="msg_latest_version">最新のバージョンを使用しています</string>
+    <string name="msg_failed_check_updates">アップデートの確認に失敗しました</string>
+    <string name="msg_error_check_updates">アップデートの確認中にエラーが発生しました</string>
+    <string name="dialog_update_available_title">アップデートが利用可能です</string>
+    <string name="dialog_update_available_message">バージョン %1$s が利用可能です。ダウンロードしてインストールしますか？\n\nリリースノート:\n%2$s</string>
+    <string name="action_download">ダウンロード</string>
+    <string name="action_cancel">キャンセル</string>
+    <string name="notification_update_title">%sのアップデート</string>
+    <string name="notification_update_description">バージョン %s をダウンロード中</string>
+    <string name="dialog_downloading_update_title">アップデートをダウンロード中</string>
+    <string name="msg_download_failed">ダウンロードに失敗しました</string>
+    <string name="msg_apk_not_found">ダウンロードしたAPKファイルが見つかりません: %s</string>
+</resources>

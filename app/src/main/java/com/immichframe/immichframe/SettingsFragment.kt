@@ -17,14 +17,18 @@ import android.provider.Settings
 import android.text.InputType
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
+import androidx.core.os.LocaleListCompat
 import androidx.preference.EditTextPreference
+import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
 import androidx.preference.SeekBarPreference
 import androidx.preference.SwitchPreferenceCompat
+import java.util.Locale
 
 class SettingsFragment : PreferenceFragmentCompat() {
     private val locationPermissionLauncher = registerForActivityResult(
@@ -74,7 +78,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         screenDimmingCategory?.isVisible = keepScreenOn
         screenTimeoutPref?.isVisible = !keepScreenOn
         if (!keepScreenOn) {
-            screenTimeoutPref?.summary = "Screen turns off after ${screenTimeoutPref?.text ?: "10"} minutes"
+            screenTimeoutPref?.summary = getString(R.string.pref_screen_timeout_summary_format, screenTimeoutPref.text ?: "10")
             chkScreenDimming?.isChecked = false
             txtDimTime?.isVisible = false
         }
@@ -106,7 +110,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
             val value = newValue as Boolean
             chkBlurredBackground?.isVisible = !value
             chkShowCurrentDate?.isVisible = !value
-            //add android settings button
             true
         }
 
@@ -128,10 +131,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
         screenTimeoutPref?.setOnPreferenceChangeListener { _, newValue ->
             val value = newValue.toString().toIntOrNull()
             if (value != null && value in 1..1440) {
-                screenTimeoutPref?.summary = "Screen turns off after $newValue minutes"
+                screenTimeoutPref.summary = getString(R.string.pref_screen_timeout_summary_format, newValue.toString())
                 true
             } else {
-                SnackbarHelper.show(requireView(), "Please enter a value between 1 and 1440 minutes (24 hours)")
+                SnackbarHelper.show(requireView(), getString(R.string.msg_invalid_screen_timeout))
                 false
             }
         }
@@ -149,13 +152,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
             val enabling = newValue as Boolean
             if (enabling) {
                 AlertDialog.Builder(requireContext())
-                    .setTitle("Confirm Action")
-                    .setMessage(
-                        "This will disable access to the settings screen, the only way back is via RPC commands (or uninstall/reinstall).\n" +
-                                "Are you absolutely sure?"
-                    )
-                    .setPositiveButton("Yes", null) // Proceed
-                    .setNegativeButton("No") { dialog, _ ->
+                    .setTitle(R.string.dialog_confirm_title)
+                    .setMessage(R.string.dialog_settings_lock_message)
+                    .setPositiveButton(R.string.action_yes, null) // Proceed
+                    .setNegativeButton(R.string.action_no) { dialog, _ ->
                         chkSettingsLock.isChecked = false // revert
                         dialog.dismiss()
                     }
@@ -171,7 +171,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 .getString("webview_url", "")?.trim()
             val urlPattern = Regex("^https?://.+")
             return@setOnPreferenceClickListener if (url.isNullOrEmpty()|| !url.matches(urlPattern)) {
-                SnackbarHelper.show(requireView(), "Please enter a valid server URL.")
+                SnackbarHelper.show(requireView(), getString(R.string.msg_invalid_server_url))
                 false
             } else {
                 activity?.setResult(Activity.RESULT_OK)
@@ -203,6 +203,29 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
         updateWifiSummary()
 
+        // language selection preference
+        val languagePref = findPreference<ListPreference>("appLanguage")
+        val currentLocales = AppCompatDelegate.getApplicationLocales()
+        val currentTag = if (currentLocales.isEmpty) {
+            "default"
+        } else {
+            val tag = currentLocales[0]?.language ?: ""
+            if (tag.equals("ja", ignoreCase = true)) "ja"
+            else if (tag.equals("en", ignoreCase = true)) "en"
+            else "default"
+        }
+        languagePref?.value = currentTag
+        languagePref?.setOnPreferenceChangeListener { _, newValue ->
+            val newTag = newValue as String
+            val locales = if (newTag == "default" || newTag.isEmpty()) {
+                LocaleListCompat.getEmptyLocaleList()
+            } else {
+                LocaleListCompat.forLanguageTags(newTag)
+            }
+            AppCompatDelegate.setApplicationLocales(locales)
+            true
+        }
+
         // launch Android settings selection
         val btnAndroidSettings = findPreference<Preference>("androidSettings")
         btnAndroidSettings?.setOnPreferenceClickListener {
@@ -210,7 +233,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
             // Only show message + auto-return on Android 9 and below
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-                SnackbarHelper.show(requireView(), "Returning to app in 2 minutes…")
+                SnackbarHelper.show(requireView(), getString(R.string.msg_returning_to_app))
 
                 // Schedule return after 2 minutes
                 Handler(Looper.getMainLooper()).postDelayed({
@@ -231,10 +254,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val currentVersion = try {
             val pInfo = requireContext().packageManager.getPackageInfo(requireContext().packageName, 0)
             pInfo.versionName ?: "Unknown"
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             "Unknown"
         }
-        btnUpdate?.summary = "Check for a new app version (Current: $currentVersion)"
+        btnUpdate?.summary = getString(R.string.pref_check_updates_with_version, currentVersion)
         btnUpdate?.setOnPreferenceClickListener {
             UpdateHelper.checkForUpdate(requireView())
             true
@@ -262,7 +285,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 updateDimSummary()
                 true // Accept new value
             } else {
-                SnackbarHelper.show(requireView(), "Invalid time format. Use HH:mm-HH:mm.")
+                SnackbarHelper.show(requireView(), getString(R.string.msg_invalid_time_format))
                 false // Reject value change
             }
         }
@@ -277,7 +300,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val endMinute = prefs.getInt("dimEndMinute", 0)
 
         val txtDimTime = findPreference<EditTextPreference>("dimTimeRange")
-        txtDimTime?.summary = String.format("Current: %02d:%02d - %02d:%02d", startHour, startMinute, endHour, endMinute)
+        txtDimTime?.summary = String.format(Locale.getDefault(), getString(R.string.pref_dim_current_format), startHour, startMinute, endHour, endMinute)
     }
 
     // make sure the WiFi summary is updated when user returns from WiFi settings panel
@@ -308,19 +331,19 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
         if (cm == null) {
-            pref.summary = "Not connected"
+            pref.summary = getString(R.string.wifi_status_not_connected)
             return
         }
 
         val network = cm.activeNetwork
         if (network == null) {
-            pref.summary = "Not connected"
+            pref.summary = getString(R.string.wifi_status_not_connected)
             return
         }
 
         val caps = cm.getNetworkCapabilities(network)
         if (caps == null) {
-            pref.summary = "Not connected"
+            pref.summary = getString(R.string.wifi_status_not_connected)
             return
         }
 
@@ -347,14 +370,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
             val cleanSsid = ssid?.removeSurrounding("\"")
             if (!cleanSsid.isNullOrBlank() && cleanSsid != "<unknown ssid>") {
-                pref.summary = "Currently connected to $cleanSsid"
+                pref.summary = getString(R.string.wifi_status_connected_to_ssid, cleanSsid)
             } else {
-                pref.summary = "Connected to Wi‑Fi"
+                pref.summary = getString(R.string.wifi_status_connected_wifi)
             }
         } else if (caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
-            pref.summary = "Connected via Ethernet"
+            pref.summary = getString(R.string.wifi_status_connected_ethernet)
         } else {
-            pref.summary = "Not connected"
+            pref.summary = getString(R.string.wifi_status_not_connected)
         }
     }
 }
